@@ -1,0 +1,31 @@
+{
+  "name": "evolveyou-dashboard-backend",
+  "version": "1.0.0",
+  "description": "Dashboard de Progresso EvolveYou - Backend Node.js",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "firebase-admin": "^11.10.1",
+    "@octokit/rest": "^20.0.1",
+    "axios": "^1.5.0",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.10.0",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.6.2"
+  },
+  "keywords": ["dashboard", "progress", "evolveyou", "nodejs", "express"],
+  "author": "Manus Agent",
+  "license": "MIT"
+}
+
