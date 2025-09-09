@@ -27,6 +27,7 @@ from models.user import (
 from middleware.auth import verify_token, get_current_user
 from middleware.logging import setup_logging
 from middleware.rate_limit import rate_limit
+from services.anamnese_api import router as anamnese_router
 
 # Configurar logging estruturado
 setup_logging()
@@ -75,6 +76,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(anamnese_router)
+
+
 # Security scheme
 security = HTTPBearer()
 
@@ -90,6 +94,9 @@ def get_calorie_service() -> CalorieService:
 
 def get_communication_service() -> CommunicationService:
     return app.state.communication_service
+
+def get_firebase_service() -> FirebaseService:
+    return app.state.firebase_service
 
 @app.get("/health")
 async def health_check():
