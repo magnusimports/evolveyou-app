@@ -48,5 +48,6 @@ class AppConstants {
   static const double buttonHeight = 56.0;
   
   // Firebase Configuration
-  static const String firebaseProject
-
+  static const String firebaseProject = 
+      'evolveyou-prod'; // Substitua pelo ID do seu projeto Firebase
+}

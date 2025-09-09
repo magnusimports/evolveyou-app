@@ -22,7 +22,7 @@ dependencies:
   flutter_riverpod: ^2.5.1
   
   # Navigation
-  go_router: ^14.2.7
+  go_router: ^16.2.1
   
   # Network & API
   http: ^1.2.2
@@ -34,16 +34,16 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   
   # Authentication
-  firebase_auth: ^5.3.1
-  firebase_core: ^3.6.0
-  google_sign_in: ^6.2.1
+  firebase_auth: ^6.0.2
+  firebase_core: ^4.1.0
+  google_sign_in: ^7.1.1
   
   # Forms & Validation
-  flutter_form_builder: ^9.4.1
+  flutter_form_builder: ^10.2.0
   form_builder_validators: ^11.0.0
   
   # Utils
-  intl: ^0.19.0
+  intl: ^0.20.2
   logger: ^2.4.0
   equatable: ^2.0.5
   
@@ -51,13 +51,13 @@ dependencies:
   flutter_animate: ^4.5.0
   
   # Device Features
-  permission_handler: ^11.3.1
-  device_info_plus: ^10.1.2
+  permission_handler: ^12.0.1
+  device_info_plus: ^11.5.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
+  flutter_lints: ^6.0.0
   build_runner: ^2.4.13
   json_annotation: ^4.9.0
   json_serializable: ^6.8.0
@@ -71,9 +71,9 @@ flutter:
     - assets/animations/
     - assets/fonts/
   
-  fonts:
-    - family: EvolveYou
-      fonts:
-        - asset: assets/fonts/EvolveYou-Regular.ttf
-        - asset: assets/fonts/EvolveYou-Bold.ttf
-          weight: 700
+  # fonts:
+  #   - family: EvolveYou
+  #     fonts:
+  #       - asset: assets/fonts/EvolveYou-Regular.ttf
+  #       - asset: assets/fonts/EvolveYou-Bold.ttf
+  #         weight: 700
