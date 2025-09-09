@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import PlanDisplay from '../../components/PlanDisplay'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
@@ -63,6 +64,9 @@ const Dashboard = () => {
           Dados atualizados agora
         </Badge>
       </div>
+
+      {/* Visualização do Plano */}
+      <PlanDisplay />
 
       {/* Métricas Principais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

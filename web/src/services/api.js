@@ -7,7 +7,7 @@ const API_CONFIG = {
   // URL base da API (será atualizada para produção)
   BASE_URL: process.env.NODE_ENV === 'production' 
     ? 'https://api.evolveyou.com' 
-    : 'https://8001-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer',
+    : '/api',
   
   // Timeout padrão para requisições
   TIMEOUT: 10000,
