@@ -1,0 +1,18 @@
+{
+  "functions": {
+    "source": ".",
+    "runtime": "python311",
+    "predeploy": [
+      "pip install -r requirements-cloud.txt -t lib/"
+    ]
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}
+

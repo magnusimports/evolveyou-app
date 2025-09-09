@@ -21,7 +21,7 @@ from services.firebase_service import FirebaseService
 from services.cache_service import CacheService
 from middleware.logging import setup_logging, LoggingMiddleware
 from middleware.auth import AuthMiddleware
-from middleware.rate_limit import RateLimitMiddleware
+from middleware.rate_limit import get_rate_limit_middleware
 from routes import logging_routes, dashboard_routes, progress_routes
 
 # Configurar logging estruturado
@@ -91,7 +91,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan
     )
     
-    # Configurar CORS
+    # Adicionar middlewares
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],  # Em produção, especificar domínios
@@ -100,10 +100,13 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     
-    # Adicionar middlewares customizados
+    # Rate limiting middleware
+    RateLimitMiddleware = get_rate_limit_middleware("development")
+    app.add_middleware(RateLimitMiddleware)
+    
+    # Outros middlewares
     app.add_middleware(LoggingMiddleware)
     app.add_middleware(AuthMiddleware)
-    app.add_middleware(RateLimitMiddleware)
     
     # Registrar rotas
     app.include_router(logging_routes.router, prefix="/log", tags=["Logging"])
