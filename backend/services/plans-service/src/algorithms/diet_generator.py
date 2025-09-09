@@ -293,20 +293,101 @@ class DietGenerator:
                 selected_foods.append(protein_source)
         
         # 2. Adicionar carboidratos
-        remaining_carbs = target.carbs - sum(f.carbs for f in selected_foods)
-        if remaining_carbs > 5:  # Se ainda precisamos de carboidratos significativos
+        current_carbs = sum(f.carbs_per_100g for f in selected_foods)
+        remaining_carbs = target.carbs - current_carbs
+        if remaining_carbs > 5:
             carb_foods = [f for f in suitable_foods if f.carbs_per_100g >= 20 and f not in selected_foods]
             carb_source = self._select_food_by_priority(carb_foods, remaining_carbs, "carbs")
             if carb_source:
                 selected_foods.append(carb_source)
-        
+
         # 3. Adicionar gorduras
-        remaining_fat = target.fat - sum(f.fat for f in selected_foods)
-        if remaining_fat > 2:  # Se ainda precisamos de gorduras
+        current_fat = sum(f.fat_per_100g for f in selected_foods)
+        remaining_fat = target.fat - current_fat
+        if remaining_fat > 2:
             fat_foods = [f for f in suitable_foods if f.fat_per_100g >= 10 and f not in selected_foods]
             fat_source = self._select_food_by_priority(fat_foods, remaining_fat, "fat")
             if fat_source:
                 selected_foods.append(fat_source)
+        
+        # 4. Completar com alimentos complementares
+        remaining_calories = target.calories - sum(f.calories_per_100g for f in selected_foods)
+        if remaining_calories > 50:
+            complementary_foods = [f for f in suitable_foods if f not in selected_foods]
+            complement = self._select_food_by_priority(complementary_foods, remaining_calories, "calories")
+            if complement:
+                selected_foods.append(complement)
+        
+        # Calcular quantidades otimizadas
+        food_items = self._optimize_quantities(selected_foods, target)
+        
+        # Calcular totais da refeição
+        total_calories = sum(item.calories for item in food_items)
+        total_protein = sum(item.protein for item in food_items)
+        total_carbs = sum(item.carbs for item in food_items)
+        total_fat = sum(item.fat for item in food_items)
+        
+        # Gerar instruções e dicas
+        instructions = self._generate_meal_instructions(meal_type, food_items)
+        tips = self._generate_meal_tips(meal_type, target, user_data)
+        
+        return Meal(
+            meal_type=meal_type,
+            name=self._generate_meal_name(meal_type, food_items),
+            time_suggestion=self._get_meal_time_suggestion(meal_type),
+            foods=food_items,
+            total_calories=total_calories,
+            total_protein=total_protein,
+            total_carbs=total_carbs,
+            total_fat=total_fat,
+            preparation_time=max(food.preparation_time for food in selected_foods) if selected_foods else 15,
+            instructions=instructions,
+            tips=tips
+        )
+    
+    def _filter_foods_for_meal(self, meal_type: MealType, foods: List[FoodCandidate]) -> List[FoodCandidate]:
+        """Filtra alimentos apropriados para um tipo de refeição"""
+        meal_categories = {
+            MealType.CAFE_DA_MANHA: ["frutas", "cereais", "laticínios", "ovos", "pães"],
+            MealType.LANCHE_MANHA: ["frutas", "oleaginosas", "laticínios", "barras"],
+            MealType.ALMOCO: ["carnes", "peixes", "cereais", "vegetais", "leguminosas"],
+            MealType.LANCHE_TARDE: ["frutas", "oleaginosas", "laticínios", "barras"],
+            MealType.JANTAR: ["carnes", "peixes", "vegetais", "leguminosas", "cereais"],
+            MealType.CEIA: ["laticínios", "oleaginosas", "proteínas"]
+        }
+        
+        appropriate_categories = meal_categories.get(meal_type, [])
+        
+        return [
+            food for food in foods 
+            if food.category in appropriate_categories or "universal" in food.category
+        ]
+    
+    def _select_food_by_priority(
+        self, 
+        foods: List[FoodCandidate], 
+        target_amount: float, 
+        nutrient: str
+    ) -> Optional[FoodCandidate]:
+        """Seleciona alimento baseado na prioridade e adequação nutricional"""
+        if not foods:
+            return None
+        
+        # Calcular score para cada alimento
+        scored_foods = []
+        for food in foods:
+            nutrient_per_100g = getattr(food, f"{nutrient}_per_100g")
+            
+            # Score baseado na adequação nutricional
+            adequacy_score = min(nutrient_per_100g / max(target_amount, 1), 2.0)
+            
+            # Score final combina adequação e preferência
+            final_score = (adequacy_score * 0.7) + (food.preference_score * 0.3)
+            
+            scored_foods.append((food, final_score))
+        
+        # Ordenar por score e adicionar aleatoriedade para variedade
+        scored_foods.sort(key=lambda x: x[1], reverse=True)
         
         # 4. Completar com alimentos complementares
         remaining_calories = target.calories - sum(f.calories_per_100g for f in selected_foods)

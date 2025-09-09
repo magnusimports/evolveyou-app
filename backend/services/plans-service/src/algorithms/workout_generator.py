@@ -143,6 +143,7 @@ class WorkoutGenerator:
                 session = await self._generate_workout_session(
                     workout_template, available_exercises, algorithm_config, user_data
                 )
+                
                 sessions.append(session)
             
             # 8. Calcular duração total
@@ -362,29 +363,32 @@ class WorkoutGenerator:
         self, 
         user_id: str, 
         target_date: date, 
-        config: AlgorithmConfig
+        algorithm_config: AlgorithmConfig
     ) -> WorkoutPlan:
         """Cria plano para dia de descanso"""
         
         # Determinar tipo de recuperação ativa baseado no objetivo
         active_recovery = None
-        if config.goal == GoalType.PERDER_PESO:
+        if algorithm_config.goal == GoalType.PERDER_PESO:
             active_recovery = "Caminhada leve de 20-30 minutos"
-        elif config.goal == GoalType.MELHORAR_RESISTENCIA:
+        elif algorithm_config.goal == GoalType.MELHORAR_RESISTENCIA:
             active_recovery = "Alongamento dinâmico e mobilidade"
         else:
             active_recovery = "Descanso completo ou alongamento suave"
         
-        return WorkoutPlan(
+
+        workout_plan = WorkoutPlan(
             user_id=user_id,
             date=target_date,
-            goal=config.goal,
+            goal=algorithm_config.goal,
             sessions=[],
             total_estimated_duration_minutes=0,
             rest_day=True,
             active_recovery=active_recovery,
             notes="Dia de descanso para recuperação muscular. A recuperação é essencial para o progresso!"
         )
+        await self._save_workout_plan(workout_plan)
+        return workout_plan
     
     def _select_template_for_day(
         self, 
@@ -465,7 +469,7 @@ class WorkoutGenerator:
         self,
         template: WorkoutTemplate,
         available_exercises: List[ExerciseCandidate],
-        config: AlgorithmConfig,
+        algorithm_config: AlgorithmConfig,
         user_data: dict
     ) -> WorkoutSession:
         """Gera uma sessão de treino baseada no template"""
@@ -478,8 +482,8 @@ class WorkoutGenerator:
         used_exercises = set()
         
         for slot in template.exercise_slots:
-            exercise = self._select_exercise_for_slot(
-                slot, available_exercises, used_exercises, config
+            exercise = self._select_exercises_for_slot(
+                slot, available_exercises, used_exercises, algorithm_config
             )
             if exercise:
                 exercises.append(exercise)
@@ -489,26 +493,26 @@ class WorkoutGenerator:
         estimated_duration = self._calculate_session_duration(exercises, warmup)
         
         return WorkoutSession(
-            session_id=f"{config.user_id}_{template.name}_{datetime.utcnow().strftime('%Y%m%d')}",
+            session_id=f"{algorithm_config.user_id}_{template.name}_{datetime.utcnow().strftime('%Y%m%d')}",
             name=template.name,
             workout_type=template.workout_type,
             muscle_groups_focus=template.muscle_groups_focus,
-            difficulty=config.experience_level,
+            difficulty=algorithm_config.experience_level,
             estimated_duration_minutes=estimated_duration,
             warmup=warmup,
             exercises=exercises,
             cooldown_notes=self._generate_cooldown_notes(template),
             equipment_needed=list(set(ex.equipment for ex in exercises if hasattr(ex, 'equipment'))),
-            location=config.workout_preferences.location,
-            notes=self._generate_session_notes(template, config)
+            location=algorithm_config.workout_preferences.location,
+            notes=self._generate_session_notes(template, algorithm_config)
         )
     
-    def _select_exercise_for_slot(
+    def _select_exercises_for_slot(
         self,
         slot: Dict,
         available_exercises: List[ExerciseCandidate],
         used_exercises: Set[str],
-        config: AlgorithmConfig
+        algorithm_config: AlgorithmConfig
     ) -> Optional[Exercise]:
         """Seleciona exercício apropriado para um slot específico"""
         
@@ -528,7 +532,7 @@ class WorkoutGenerator:
                 continue
             
             # Verificar dificuldade
-            if not self._is_appropriate_difficulty(exercise.difficulty, config.experience_level):
+            if not self._is_appropriate_difficulty(exercise.difficulty, algorithm_config.experience_level):
                 continue
             
             candidates.append(exercise)
@@ -540,7 +544,7 @@ class WorkoutGenerator:
         selected_candidate = max(candidates, key=lambda x: x.effectiveness_rating * x.safety_rating)
         
         # Gerar sets para o exercício
-        sets = self._generate_exercise_sets(selected_candidate, slot, config)
+        sets = self._generate_exercise_sets(selected_candidate, slot, algorithm_config)
         
         return Exercise(
             exercise_id=selected_candidate.exercise_id,
@@ -550,7 +554,7 @@ class WorkoutGenerator:
             difficulty=selected_candidate.difficulty,
             sets=sets,
             instructions=f"Execute {len(sets)} séries deste exercício",
-            tips=self._generate_exercise_tips(selected_candidate, config),
+           tips=self._generate_exercise_tips(selected_candidate, algorithm_config),
             safety_notes=self._generate_safety_notes(selected_candidate)
         )
     
@@ -558,18 +562,18 @@ class WorkoutGenerator:
         self,
         exercise: ExerciseCandidate,
         slot: Dict,
-        config: AlgorithmConfig
+        algorithm_config: AlgorithmConfig
     ) -> List[ExerciseSet]:
         """Gera séries para um exercício"""
         
         num_sets = slot.get("sets", 3)
-        volume_config = self.workout_config["volume_config"][config.experience_level.value]
-        intensity_config = self.workout_config["intensity_config"][config.goal.value]
+        volume_config = self.workout_config["volume_config"][algorithm_config.experience_level.value]
+        intensity_config = self.workout_config["intensity_config"][algorithm_config.goal.value]
         
         # Determinar range de repetições baseado no objetivo
-        if config.goal == GoalType.AUMENTAR_FORCA:
+        if algorithm_config.goal == GoalType.AUMENTAR_FORCA:
             rep_range = volume_config["reps_range"]["strength"]
-        elif config.goal == GoalType.MELHORAR_RESISTENCIA:
+        elif algorithm_config.goal == GoalType.MELHORAR_RESISTENCIA:
             rep_range = volume_config["reps_range"]["endurance"]
         else:
             rep_range = volume_config["reps_range"]["hypertrophy"]
@@ -647,7 +651,7 @@ class WorkoutGenerator:
         
         return int(warmup_duration + exercise_duration + cooldown_duration)
     
-    def _generate_exercise_tips(self, exercise: ExerciseCandidate, config: AlgorithmConfig) -> List[str]:
+    def _generate_exercise_tips(self, exercise: ExerciseCandidate, algorithm_config: AlgorithmConfig) -> List[str]:
         """Gera dicas específicas para o exercício"""
         tips = []
         
@@ -657,9 +661,9 @@ class WorkoutGenerator:
         if exercise.difficulty == DifficultyLevel.ADVANCED:
             tips.append("Exercício avançado - foque na técnica perfeita")
         
-        if config.goal == GoalType.PERDER_PESO:
+        if algorithm_config.goal == GoalType.PERDER_PESO:
             tips.append("Mantenha intensidade alta para maximizar queima calórica")
-        elif config.goal == GoalType.GANHAR_MASSA:
+        elif algorithm_config.goal == GoalType.GANHAR_MASSA:
             tips.append("Foque na conexão mente-músculo para máximo estímulo")
         
         return tips[:2]  # Máximo 2 dicas
@@ -689,27 +693,27 @@ class WorkoutGenerator:
         
         return cooldown_notes.get(template.warmup_type, cooldown_notes["full_body"])
     
-    def _generate_session_notes(self, template: WorkoutTemplate, config: AlgorithmConfig) -> str:
+    def _generate_session_notes(self, template: WorkoutTemplate, algorithm_config: AlgorithmConfig) -> str:
         """Gera notas específicas para a sessão"""
         notes = []
         
-        if config.goal == GoalType.PERDER_PESO:
+        if algorithm_config.goal == GoalType.PERDER_PESO:
             notes.append("Mantenha intensidade alta e descansos curtos.")
-        elif config.goal == GoalType.GANHAR_MASSA:
+        elif algorithm_config.goal == GoalType.GANHAR_MASSA:
             notes.append("Foque na sobrecarga progressiva e técnica perfeita.")
-        elif config.goal == GoalType.AUMENTAR_FORCA:
+        elif algorithm_config.goal == GoalType.AUMENTAR_FORCA:
             notes.append("Priorize cargas altas com descansos adequados.")
         
         notes.append(f"Treino focado em: {', '.join(template.muscle_groups_focus)}")
         
         return " ".join(notes)
     
-    def _generate_workout_notes(self, config: AlgorithmConfig, preferences: WorkoutPreferences) -> str:
+    def _generate_workout_notes(self, algorithm_config: AlgorithmConfig, preferences: WorkoutPreferences) -> str:
         """Gera notas gerais para o plano de treino"""
         notes = []
         
-        notes.append(f"Plano personalizado para {config.goal.value.replace('_', ' ')}.")
-        notes.append(f"Nível: {config.experience_level.value}")
+        notes.append(f"Plano personalizado para {algorithm_config.goal.value.replace('_', ' ')}.")
+        notes.append(f"Nível: {algorithm_config.experience_level.value}")
         notes.append(f"Local: {preferences.location}")
         
         return " ".join(notes)
@@ -731,10 +735,10 @@ class WorkoutGenerator:
             logger.error("Erro ao buscar plano de treino existente", error=str(e))
             return None
     
-    def _should_regenerate_plan(self, existing_plan: WorkoutPlan, config: AlgorithmConfig) -> bool:
+    def _should_regenerate_plan(self, existing_plan: WorkoutPlan, algorithm_config: AlgorithmConfig) -> bool:
         """Verifica se deve regenerar um plano existente"""
         # Regenerar se o objetivo mudou
-        if existing_plan.goal != config.goal:
+        if existing_plan.goal != algorithm_config.goal:
             return True
         
         # Regenerar se o plano é muito antigo (mais de 7 dias)
