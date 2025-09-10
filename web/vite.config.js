@@ -17,6 +17,16 @@ export default defineConfig({
     strictPort: true,
     origin: 'https://5173-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer',
     proxy: {
+      '/api/tracking': {
+        target: 'https://8001-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/tracking/, ''),
+      },
+      '/api/evo': {
+        target: 'https://8002-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/evo/, '/evo'),
+      },
       '/api': {
         target: 'https://8001-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer',
         changeOrigin: true,

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import PlanDisplay from '../../components/PlanDisplay'
 import MealLogger from '../tracking/MealLogger'
 import ExerciseLogger from '../tracking/ExerciseLogger'
+import CoachEVO from '../coach/CoachEVO'
 import trackingService from '../../services/trackingService'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -42,7 +43,7 @@ const Dashboard = () => {
     error: null
   })
 
-  const [activeTab, setActiveTab] = useState('overview') // overview, meals, exercises
+  const [activeTab, setActiveTab] = useState('overview') // overview, meals, exercises, coach
 
   const [userProfile] = useState({
     age: 30,
@@ -335,6 +336,16 @@ const Dashboard = () => {
           >
             🏋️‍♂️ Exercícios
           </button>
+          <button
+            onClick={() => setActiveTab('coach')}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'coach'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            🤖 Coach EVO
+          </button>
         </div>
 
         {/* Conteúdo das Abas */}
@@ -443,6 +454,10 @@ const Dashboard = () => {
 
         {activeTab === 'exercises' && (
           <ExerciseLogger onExerciseLogged={handleExerciseLogged} />
+        )}
+
+        {activeTab === 'coach' && (
+          <CoachEVO />
         )}
 
         {/* Indicador de Erro */}
