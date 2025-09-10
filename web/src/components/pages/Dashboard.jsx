@@ -1,5 +1,8 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import PlanDisplay from '../../components/PlanDisplay'
+import MealLogger from '../tracking/MealLogger'
+import ExerciseLogger from '../tracking/ExerciseLogger'
+import trackingService from '../../services/trackingService'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
@@ -31,6 +34,16 @@ const Dashboard = () => {
     }
   })
 
+  const [trackingData, setTrackingData] = useState({
+    todayMeals: [],
+    todayExercises: [],
+    dashboardSummary: null,
+    isLoading: false,
+    error: null
+  })
+
+  const [activeTab, setActiveTab] = useState('overview') // overview, meals, exercises
+
   const [userProfile] = useState({
     age: 30,
     height: 175,
@@ -38,6 +51,69 @@ const Dashboard = () => {
     activity: 'Moderadamente Ativo',
     challenges: ['Falta de tempo', 'Controle de porções']
   })
+
+  // Carrega dados de tracking ao montar o componente
+  useEffect(() => {
+    loadTrackingData()
+  }, [])
+
+  const loadTrackingData = async () => {
+    setTrackingData(prev => ({ ...prev, isLoading: true, error: null }))
+    
+    try {
+      const [dashboardSummary, mealHistory, exerciseHistory] = await Promise.all([
+        trackingService.getDashboardSummary(),
+        trackingService.getLogHistory('meal', { limit: 10 }),
+        trackingService.getLogHistory('exercise', { limit: 10 })
+      ])
+
+      setTrackingData(prev => ({
+        ...prev,
+        dashboardSummary,
+        todayMeals: mealHistory || [],
+        todayExercises: exerciseHistory || [],
+        isLoading: false
+      }))
+
+      // Atualiza métricas com dados reais da API
+      if (dashboardSummary) {
+        setMetrics(prev => ({
+          ...prev,
+          todayCalories: dashboardSummary.calories_consumed || prev.todayCalories,
+          workoutsCompleted: dashboardSummary.workouts_completed || prev.workoutsCompleted,
+          currentWeight: dashboardSummary.current_weight || prev.currentWeight
+        }))
+      }
+
+    } catch (error) {
+      console.error('Erro ao carregar dados de tracking:', error)
+      setTrackingData(prev => ({
+        ...prev,
+        error: 'Erro ao carregar dados. Usando dados offline.',
+        isLoading: false
+      }))
+    }
+  }
+
+  const handleMealLogged = (mealData) => {
+    setTrackingData(prev => ({
+      ...prev,
+      todayMeals: [mealData, ...prev.todayMeals]
+    }))
+    
+    // Recarrega dados do dashboard
+    loadTrackingData()
+  }
+
+  const handleExerciseLogged = (exerciseData) => {
+    setTrackingData(prev => ({
+      ...prev,
+      todayExercises: [exerciseData, ...prev.todayExercises]
+    }))
+    
+    // Recarrega dados do dashboard
+    loadTrackingData()
+  }
 
   const getBMIStatus = (bmi) => {
     if (bmi < 18.5) return { status: 'Abaixo do peso', color: 'text-blue-600' }
@@ -223,6 +299,161 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Seção de Tracking */}
+      <div className="space-y-6">
+        {/* Navegação por Abas */}
+        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'overview'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            📊 Visão Geral
+          </button>
+          <button
+            onClick={() => setActiveTab('meals')}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'meals'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            🍽️ Refeições
+          </button>
+          <button
+            onClick={() => setActiveTab('exercises')}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'exercises'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            🏋️‍♂️ Exercícios
+          </button>
+        </div>
+
+        {/* Conteúdo das Abas */}
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Resumo de Refeições Hoje */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <span>🍽️</span>
+                  <span>Refeições de Hoje</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {trackingData.isLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-sm text-gray-500 mt-2">Carregando...</p>
+                  </div>
+                ) : trackingData.todayMeals.length > 0 ? (
+                  <div className="space-y-3">
+                    {trackingData.todayMeals.slice(0, 3).map((meal, index) => (
+                      <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">{meal.meal_type || 'Refeição'}</p>
+                          <p className="text-sm text-gray-600">
+                            {meal.total_calories || 0} kcal
+                          </p>
+                        </div>
+                        <span className="text-2xl">🍽️</span>
+                      </div>
+                    ))}
+                    {trackingData.todayMeals.length > 3 && (
+                      <p className="text-sm text-gray-500 text-center">
+                        +{trackingData.todayMeals.length - 3} refeições a mais
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">Nenhuma refeição registrada hoje</p>
+                    <button
+                      onClick={() => setActiveTab('meals')}
+                      className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      Registrar primeira refeição
+                    </button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Resumo de Exercícios Hoje */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <span>🏋️‍♂️</span>
+                  <span>Exercícios de Hoje</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {trackingData.isLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-sm text-gray-500 mt-2">Carregando...</p>
+                  </div>
+                ) : trackingData.todayExercises.length > 0 ? (
+                  <div className="space-y-3">
+                    {trackingData.todayExercises.slice(0, 3).map((exercise, index) => (
+                      <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">{exercise.exercise_name || 'Exercício'}</p>
+                          <p className="text-sm text-gray-600">
+                            {exercise.reps_done || 0} reps
+                            {exercise.weight_kg && ` • ${exercise.weight_kg}kg`}
+                          </p>
+                        </div>
+                        <span className="text-2xl">💪</span>
+                      </div>
+                    ))}
+                    {trackingData.todayExercises.length > 3 && (
+                      <p className="text-sm text-gray-500 text-center">
+                        +{trackingData.todayExercises.length - 3} exercícios a mais
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">Nenhum exercício registrado hoje</p>
+                    <button
+                      onClick={() => setActiveTab('exercises')}
+                      className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      Iniciar primeiro treino
+                    </button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'meals' && (
+          <MealLogger onMealLogged={handleMealLogged} />
+        )}
+
+        {activeTab === 'exercises' && (
+          <ExerciseLogger onExerciseLogged={handleExerciseLogged} />
+        )}
+
+        {/* Indicador de Erro */}
+        {trackingData.error && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <span className="text-yellow-600 mr-2">⚠️</span>
+              <p className="text-yellow-800 text-sm">{trackingData.error}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

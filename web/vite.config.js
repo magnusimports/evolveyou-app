@@ -15,7 +15,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
-    origin: 'https://5173-imm0ohv1ehz55hwpu37il-c91b1b35.manusvm.computer',
+    origin: 'https://5173-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer',
     proxy: {
       '/api': {
         target: 'https://8001-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer',
@@ -24,7 +24,7 @@ export default defineConfig({
       },
     },
     allowedHosts: [
-      '5173-imm0ohv1ehz55hwpu37il-c91b1b35.manusvm.computer'
+      '5173-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer'
     ]
   }
 })

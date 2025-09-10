@@ -94,8 +94,7 @@ class AuthMiddleware:
             "authenticated": True
         }
 
-# Instância do middleware
-auth_middleware = AuthMiddleware()
+# Instância do middleware será criada no main.py
 
 def get_user_from_request(request: Request) -> Dict[str, Any]:
     """
