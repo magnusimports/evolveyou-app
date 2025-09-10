@@ -3,6 +3,7 @@ import PlanDisplay from '../../components/PlanDisplay'
 import MealLogger from '../tracking/MealLogger'
 import ExerciseLogger from '../tracking/ExerciseLogger'
 import CoachEVO from '../coach/CoachEVO'
+import FullTimeSystem from '../fulltime/FullTimeSystem'
 import trackingService from '../../services/trackingService'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -43,7 +44,7 @@ const Dashboard = () => {
     error: null
   })
 
-  const [activeTab, setActiveTab] = useState('overview') // overview, meals, exercises, coach
+  const [activeTab, setActiveTab] = useState('overview') // overview, meals, exercises, coach, fulltime
 
   const [userProfile] = useState({
     age: 30,
@@ -346,6 +347,16 @@ const Dashboard = () => {
           >
             🤖 Coach EVO
           </button>
+          <button
+            onClick={() => setActiveTab('fulltime')}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'fulltime'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            🔄 Full-time
+          </button>
         </div>
 
         {/* Conteúdo das Abas */}
@@ -458,6 +469,10 @@ const Dashboard = () => {
 
         {activeTab === 'coach' && (
           <CoachEVO />
+        )}
+
+        {activeTab === 'fulltime' && (
+          <FullTimeSystem />
         )}
 
         {/* Indicador de Erro */}

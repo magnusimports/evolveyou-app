@@ -22,6 +22,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/tracking/, ''),
       },
+      '/api/fulltime': {
+        target: 'https://8001-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/fulltime/, '/fulltime'),
+      },
       '/api/evo': {
         target: 'https://8002-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer',
         changeOrigin: true,

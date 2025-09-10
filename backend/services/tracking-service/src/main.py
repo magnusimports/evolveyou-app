@@ -22,7 +22,7 @@ from services.cache_service import CacheService
 from middleware.logging import setup_logging, LoggingMiddleware
 from middleware.auth import AuthMiddleware
 from middleware.rate_limit import get_rate_limit_middleware
-from routes import logging_routes, dashboard_routes, progress_routes
+from routes import logging_routes, dashboard_routes, progress_routes, fulltime_routes
 
 # Configurar logging estruturado
 setup_logging()
@@ -112,6 +112,7 @@ def create_app() -> FastAPI:
     app.include_router(logging_routes.router, prefix="/log", tags=["Logging"])
     app.include_router(dashboard_routes.router, prefix="/dashboard", tags=["Dashboard"])
     app.include_router(progress_routes.router, prefix="/progress", tags=["Progress"])
+    app.include_router(fulltime_routes.router, tags=["Full-time System"])
     
     # Handlers de erro
     @app.exception_handler(HTTPException)
