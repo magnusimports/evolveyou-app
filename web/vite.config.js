@@ -17,6 +17,11 @@ export default defineConfig({
     strictPort: true,
     origin: 'https://5173-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer',
     proxy: {
+      '/gateway': {
+        target: 'https://8080-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/gateway/, ''),
+      },
       '/api/tracking': {
         target: 'https://8001-i42asipgh0xtnp57t2oxl-2090996d.manusvm.computer',
         changeOrigin: true,

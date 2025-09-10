@@ -9,6 +9,11 @@ from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from datetime import datetime, date
 import json
+import sys
+import os
+
+# Adicionar src ao path para importar rotas
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 # Modelos simplificados
 class MealCheckin(BaseModel):
@@ -292,6 +297,104 @@ async def get_weight_trend(days: int = 30):
             "average_change_per_week": -0.56,
             "total_change": round(weight_data[-1]["weight_kg"] - weight_data[0]["weight_kg"], 1)
         }
+    }
+
+# Endpoints Full-time System
+
+@app.get("/fulltime/dashboard/{user_id}")
+async def get_fulltime_dashboard(user_id: str):
+    """Dashboard do Sistema Full-time"""
+    return {
+        "status": {
+            "is_active": True,
+            "daily_extra_calories": 320,
+            "total_rebalances_today": 2,
+            "last_rebalance": "2025-09-10T14:30:00Z"
+        },
+        "recent_activities": [
+            {
+                "activity": {
+                    "activity_type": "walking",
+                    "duration_minutes": 45,
+                    "intensity": "moderate",
+                    "description": "Caminhada no parque"
+                },
+                "calories_burned": 180,
+                "timestamp": "2025-09-10T15:00:00Z"
+            },
+            {
+                "activity": {
+                    "activity_type": "stairs",
+                    "duration_minutes": 10,
+                    "intensity": "high",
+                    "description": "Subir escadas do prédio"
+                },
+                "calories_burned": 140,
+                "timestamp": "2025-09-10T12:30:00Z"
+            }
+        ],
+        "recent_rebalances": [
+            {
+                "original_calories": 2000,
+                "new_calorie_target": 2180,
+                "extra_calories_burned": 180,
+                "rebalance_reason": "Atividade extra: Caminhada (45 min)"
+            },
+            {
+                "original_calories": 2180,
+                "new_calorie_target": 2320,
+                "extra_calories_burned": 140,
+                "rebalance_reason": "Atividade extra: Subir escadas (10 min)"
+            }
+        ]
+    }
+
+@app.post("/fulltime/register-activity")
+async def register_extra_activity(user_id: str, activity: dict):
+    """Registra atividade extra"""
+    # Simular cálculo de calorias
+    duration = activity.get("duration_minutes", 30)
+    intensity = activity.get("intensity", "moderate")
+    
+    # Cálculo simplificado de calorias
+    base_calories = {
+        "walking": 4,
+        "stairs": 14,
+        "housework": 3,
+        "sports": 8,
+        "cycling": 6,
+        "running": 10,
+        "dancing": 5,
+        "gardening": 4,
+        "cleaning": 3,
+        "shopping": 2
+    }
+    
+    intensity_multiplier = {
+        "low": 0.8,
+        "moderate": 1.0,
+        "high": 1.3
+    }
+    
+    activity_type = activity.get("activity_type", "walking")
+    calories = int(base_calories.get(activity_type, 4) * duration * intensity_multiplier.get(intensity, 1.0))
+    
+    return {
+        "success": True,
+        "message": f"Atividade registrada com sucesso! {calories} calorias queimadas.",
+        "activity_logged": activity,
+        "calories_burned": calories,
+        "rebalance_triggered": True,
+        "new_calorie_target": 2000 + calories
+    }
+
+@app.post("/fulltime/toggle-status/{user_id}")
+async def toggle_fulltime_status(user_id: str):
+    """Alterna status do Sistema Full-time"""
+    return {
+        "success": True,
+        "message": "Sistema Full-time ativado com sucesso!",
+        "new_status": True
     }
 
 # Endpoints de sistema
