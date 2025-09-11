@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/hooks/useAuth.jsx'
 import Navbar from '@/components/layout/Navbar'
-import Dashboard from '@/components/pages/Dashboard'
+import DashboardSimple from '@/components/pages/DashboardSimple'
 import DashboardAdvanced from '@/components/pages/DashboardAdvanced'
 import Login from '@/components/pages/Login'
 import Nutrition from '@/components/pages/Nutrition'
@@ -44,7 +44,7 @@ function AppContent() {
         <main className="container mx-auto px-4 py-6">
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<DashboardSimple />} />
             <Route path="/nutrition" element={<Nutrition />} />
             <Route path="/workout" element={<Workout />} />
             <Route path="/coach" element={<CoachEVO />} />
