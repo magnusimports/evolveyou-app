@@ -242,7 +242,7 @@ const Login = () => {
                   </a>
                   <p className="text-sm text-gray-600">
                     Não tem uma conta?{' '}
-                    <a href="#" className="text-blue-600 hover:underline font-medium">
+                    <a href="/register" className="text-blue-600 hover:underline font-medium">
                       Cadastre-se grátis
                     </a>
                   </p>
