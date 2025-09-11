@@ -5,6 +5,8 @@ import ExerciseLogger from '../tracking/ExerciseLogger'
 import CoachEVO from '../coach/CoachEVO'
 import FullTimeSystem from '../fulltime/FullTimeSystem'
 import trackingService from '../../services/trackingService'
+import apiService from '../../services/api'
+import { useAuth } from '../../hooks/useAuth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +22,16 @@ import {
 } from 'lucide-react'
 
 const Dashboard = () => {
+  const { user } = useAuth()
+  
+  // Estados para dados dinâmicos
+  const [userProfile, setUserProfile] = useState(null)
+  const [userPlan, setUserPlan] = useState(null)
+  const [progressData, setProgressData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  // Estados legados mantidos para compatibilidade
   const [metrics, setMetrics] = useState({
     currentWeight: 75,
     targetWeight: 70,
@@ -46,18 +58,74 @@ const Dashboard = () => {
 
   const [activeTab, setActiveTab] = useState('overview') // overview, meals, exercises, coach, fulltime
 
-  const [userProfile] = useState({
-    age: 30,
-    height: 175,
-    goal: 'Perder Peso',
-    activity: 'Moderadamente Ativo',
-    challenges: ['Falta de tempo', 'Controle de porções']
-  })
-
-  // Carrega dados de tracking ao montar o componente
+  // Carrega dados reais da API ao montar o componente
   useEffect(() => {
-    loadTrackingData()
-  }, [])
+    loadDashboardData()
+  }, [user])
+
+  const loadDashboardData = async () => {
+    if (!user?.uid) return
+    
+    setLoading(true)
+    setError(null)
+    
+    try {
+      console.log('🔄 Carregando dados do dashboard...')
+      
+      // Carrega dados em paralelo
+      const [profileResponse, planResponse, progressResponse] = await Promise.all([
+        apiService.getUserProfile(user.uid),
+        apiService.getUserPlan(user.uid),
+        apiService.getProgress(user.uid)
+      ])
+
+      console.log('✅ Dados carregados:', { profileResponse, planResponse, progressResponse })
+
+      // Atualiza estados com dados reais
+      if (profileResponse?.success) {
+        setUserProfile(profileResponse.data)
+        
+        // Atualiza métricas com dados do perfil
+        if (profileResponse.data.stats) {
+          setMetrics(prev => ({
+            ...prev,
+            currentWeight: profileResponse.data.stats.currentWeight || prev.currentWeight,
+            targetWeight: profileResponse.data.stats.targetWeight || prev.targetWeight,
+            bmi: profileResponse.data.stats.bmi || prev.bmi,
+            targetCalories: profileResponse.data.stats.targetCalories || prev.targetCalories,
+            todayCalories: profileResponse.data.stats.dailyCalories || prev.todayCalories,
+            waterIntake: profileResponse.data.stats.waterIntake || prev.waterIntake
+          }))
+        }
+      }
+
+      if (planResponse?.success) {
+        setUserPlan(planResponse.data)
+      }
+
+      if (progressResponse?.success) {
+        setProgressData(progressResponse.data)
+        
+        // Atualiza métricas com dados de progresso
+        if (progressResponse.data.overview) {
+          setMetrics(prev => ({
+            ...prev,
+            workoutsCompleted: progressResponse.data.overview.workoutsCompleted || prev.workoutsCompleted,
+            totalWorkouts: progressResponse.data.overview.totalWorkouts || prev.totalWorkouts
+          }))
+        }
+      }
+
+      // Carrega dados de tracking legados
+      await loadTrackingData()
+
+    } catch (error) {
+      console.error('❌ Erro ao carregar dados do dashboard:', error)
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const loadTrackingData = async () => {
     setTrackingData(prev => ({ ...prev, isLoading: true, error: null }))
@@ -77,22 +145,12 @@ const Dashboard = () => {
         isLoading: false
       }))
 
-      // Atualiza métricas com dados reais da API
-      if (dashboardSummary) {
-        setMetrics(prev => ({
-          ...prev,
-          todayCalories: dashboardSummary.calories_consumed || prev.todayCalories,
-          workoutsCompleted: dashboardSummary.workouts_completed || prev.workoutsCompleted,
-          currentWeight: dashboardSummary.current_weight || prev.currentWeight
-        }))
-      }
-
     } catch (error) {
-      console.error('Erro ao carregar dados de tracking:', error)
+      console.error('❌ Erro ao carregar dados de tracking:', error)
       setTrackingData(prev => ({
         ...prev,
-        error: 'Erro ao carregar dados. Usando dados offline.',
-        isLoading: false
+        isLoading: false,
+        error: error.message
       }))
     }
   }
@@ -129,17 +187,53 @@ const Dashboard = () => {
   const waterProgress = (metrics.waterIntake / metrics.targetWater) * 100
   const workoutProgress = (metrics.workoutsCompleted / metrics.totalWorkouts) * 100
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando seus dados...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="text-red-500 text-xl mb-4">⚠️</div>
+            <p className="text-gray-600 mb-4">Erro ao carregar dados: {error}</p>
+            <button 
+              onClick={loadDashboardData}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Acompanhe seu progresso em tempo real</p>
+          <p className="text-gray-600">
+            {userProfile?.user?.name ? `Olá, ${userProfile.user.name}!` : 'Acompanhe seu progresso em tempo real'}
+          </p>
         </div>
         <Badge variant="outline" className="text-green-600 border-green-200">
           <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-          Dados atualizados agora
+          {progressData?.source === 'mock' ? 'Dados demo' : 'Dados atualizados agora'}
         </Badge>
       </div>
 
