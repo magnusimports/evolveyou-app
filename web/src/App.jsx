@@ -3,17 +3,18 @@ import { AuthProvider, useAuth } from '@/hooks/useAuth.jsx'
 import Navbar from '@/components/layout/Navbar'
 import Dashboard from '@/components/pages/Dashboard'
 import DashboardAdvanced from '@/components/pages/DashboardAdvanced'
+import Login from '@/components/pages/Login'
 import Nutrition from '@/components/pages/Nutrition'
 import Workout from '@/components/pages/Workout'
 import WorkoutPlayer from '@/components/pages/WorkoutPlayer'
-import ProgressDashboard from '@/components/pages/ProgressDashboard'
+import FullTimeSystem from '@/components/pages/FullTimeSystem'
 import CoachEVO from '@/components/pages/CoachEVO'
 import Profile from '@/components/pages/Profile'
-import Login from '@/components/pages/Login'
+import ProgressDashboard from '@/components/pages/ProgressDashboard'
 import MealRegistration from '@/components/pages/MealRegistration'
-import FullTimeSystem from '@/components/pages/FullTimeSystem'
 import Onboarding from '@/components/pages/Onboarding'
 import PlanPresentation from '@/components/pages/PlanPresentation'
+import ApiTest from '@/components/pages/ApiTest'
 import './App.css'
 
 function AppContent() {
@@ -49,12 +50,13 @@ function AppContent() {
             <Route path="/coach" element={<CoachEVO />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/meals" element={<MealRegistration />} />
-            <Route path="/fulltime" element={<FullTimeSystem />} />
+            <Route path="/meal-registration" element={<MealRegistration />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/plan-presentation" element={<PlanPresentation />} />
-            <Route path="/dashboard-advanced" element={<DashboardAdvanced />} />
+            <Route path="/api-test" element={<ApiTest />} />
             <Route path="/workout-player" element={<WorkoutPlayer />} />
             <Route path="/progress" element={<ProgressDashboard />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
       </div>
