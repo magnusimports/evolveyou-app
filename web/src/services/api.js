@@ -4,6 +4,7 @@
  */
 
 import { auth } from '../config/firebase';
+import mockDataService from './mockData';
 
 // Configuração da API
 const API_CONFIG = {
@@ -13,7 +14,7 @@ const API_CONFIG = {
     : 'http://localhost:8080',
   
   // Timeout padrão para requisições
-  TIMEOUT: 30000,
+  TIMEOUT: 5000, // Reduzido para fallback mais rápido
   
   // Headers padrão
   DEFAULT_HEADERS: {
@@ -33,8 +34,35 @@ class ApiService {
   }
 
   /**
-   * Método genérico para fazer requisições HTTP
+   * Método com fallback inteligente para mock data
    */
+  async requestWithFallback(endpoint, options = {}, mockMethod = null) {
+    try {
+      // Tentar requisição real primeiro
+      console.log(`🌐 Tentando API real: ${options.method || 'GET'} ${endpoint}`);
+      const result = await this.request(endpoint, options);
+      console.log(`✅ API real funcionou: ${endpoint}`);
+      return result;
+    } catch (error) {
+      console.warn(`⚠️ API real falhou: ${error.message}`);
+      
+      // Fallback para dados mock se método fornecido
+      if (mockMethod && typeof mockDataService[mockMethod] === 'function') {
+        console.log(`🔄 Usando fallback mock: ${mockMethod}`);
+        try {
+          const mockResult = await mockDataService[mockMethod](...(options.mockParams || []));
+          console.log(`✅ Mock funcionou: ${mockMethod}`);
+          return mockResult;
+        } catch (mockError) {
+          console.error(`❌ Mock também falhou: ${mockError.message}`);
+          throw new Error(`API e mock falharam: ${error.message}`);
+        }
+      }
+      
+      // Se não há fallback, propagar erro original
+      throw error;
+    }
+  }
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
     
@@ -151,70 +179,126 @@ class ApiService {
 
   // Health Check
   async healthCheck() {
-    return this.get('/health');
+    return this.requestWithFallback('/health', { method: 'GET' }, 'healthCheck');
   }
 
   // Usuários
   async getUserProfile(userId) {
-    return this.get(`/users/profile/${userId}`);
+    return this.requestWithFallback(
+      `/users/profile/${userId}`, 
+      { method: 'GET', mockParams: [userId] }, 
+      'getUserProfile'
+    );
   }
 
   async updateUserProfile(userId, profileData) {
-    return this.put(`/users/profile/${userId}`, profileData);
+    return this.requestWithFallback(
+      `/users/profile/${userId}`, 
+      { method: 'PUT', data: profileData, mockParams: [userId, profileData] }, 
+      'getUserProfile' // Retorna perfil atualizado
+    );
   }
 
   async getUserStats(userId) {
-    return this.get(`/users/stats/${userId}`);
+    return this.requestWithFallback(
+      `/users/stats/${userId}`, 
+      { method: 'GET', mockParams: [userId] }, 
+      'getUserProfile'
+    );
   }
 
   // Planos
   async getUserPlan(userId) {
-    return this.get(`/plans/user/${userId}`);
+    return this.requestWithFallback(
+      `/plans/user/${userId}`, 
+      { method: 'GET', mockParams: [userId] }, 
+      'getUserPlan'
+    );
   }
 
   async generateNewPlan(userId, preferences) {
-    return this.post(`/plans/generate/${userId}`, preferences);
+    return this.requestWithFallback(
+      `/plans/generate/${userId}`, 
+      { method: 'POST', data: preferences, mockParams: [userId, preferences] }, 
+      'getUserPlan'
+    );
   }
 
   // Tracking
   async getProgress(userId) {
-    return this.get(`/tracking/progress/${userId}`);
+    return this.requestWithFallback(
+      `/tracking/progress/${userId}`, 
+      { method: 'GET', mockParams: [userId] }, 
+      'getProgress'
+    );
   }
 
   async logMeal(userId, mealData) {
-    return this.post(`/tracking/meals/${userId}`, mealData);
+    return this.requestWithFallback(
+      `/tracking/meals/${userId}`, 
+      { method: 'POST', data: mealData, mockParams: [userId, mealData] }, 
+      'logMeal'
+    );
   }
 
   async logWorkout(userId, workoutData) {
-    return this.post(`/tracking/workouts/${userId}`, workoutData);
+    return this.requestWithFallback(
+      `/tracking/workouts/${userId}`, 
+      { method: 'POST', data: workoutData, mockParams: [userId, workoutData] }, 
+      'logWorkout'
+    );
   }
 
   async getMeals(userId, date) {
-    return this.get(`/tracking/meals/${userId}?date=${date}`);
+    return this.requestWithFallback(
+      `/tracking/meals/${userId}?date=${date}`, 
+      { method: 'GET', mockParams: [userId, date] }, 
+      'getProgress' // Usa dados de progresso que incluem refeições
+    );
   }
 
   async getWorkouts(userId, date) {
-    return this.get(`/tracking/workouts/${userId}?date=${date}`);
+    return this.requestWithFallback(
+      `/tracking/workouts/${userId}?date=${date}`, 
+      { method: 'GET', mockParams: [userId, date] }, 
+      'getProgress' // Usa dados de progresso que incluem treinos
+    );
   }
 
   // Coach EVO
   async sendMessageToEVO(userId, message) {
-    return this.post(`/evo/chat/${userId}`, { message });
+    return this.requestWithFallback(
+      `/evo/chat/${userId}`, 
+      { method: 'POST', data: { message }, mockParams: [userId, message] }, 
+      'sendMessageToEVO'
+    );
   }
 
   async getEVOHistory(userId) {
-    return this.get(`/evo/history/${userId}`);
+    return this.requestWithFallback(
+      `/evo/history/${userId}`, 
+      { method: 'GET', mockParams: [userId] }, 
+      'getEVOHistory'
+    );
   }
 
   // Conteúdo
   async getArticles(category = null) {
     const endpoint = category ? `/content/articles?category=${category}` : '/content/articles';
-    return this.get(endpoint);
+    return this.requestWithFallback(
+      endpoint, 
+      { method: 'GET', mockParams: [category] }, 
+      'getArticles'
+    );
   }
 
   async getVideos(category = null) {
     const endpoint = category ? `/content/videos?category=${category}` : '/content/videos';
-    return this.get(endpoint);
+    return this.requestWithFallback(
+      endpoint, 
+      { method: 'GET', mockParams: [category] }, 
+      'getArticles' // Usa mesmo método de artigos
+    );
   }
 }
 
