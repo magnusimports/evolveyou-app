@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { useAuth } from '@/hooks/useAuth.jsx'
 import { 
   Mail,
   Lock,
@@ -13,15 +14,46 @@ import {
   TrendingUp
 } from 'lucide-react'
 
-const Login = ({ onLogin }) => {
+const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const { signIn, signInWithGoogle, error } = useAuth()
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
-    // Simular login
-    onLogin()
+    setLoading(true)
+    try {
+      await signIn(email, password)
+    } catch (error) {
+      console.error('Login error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    setLoading(true)
+    try {
+      await signInWithGoogle()
+    } catch (error) {
+      console.error('Google login error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDemoLogin = async () => {
+    setLoading(true)
+    try {
+      // Demo credentials
+      await signIn('demo@evolveyou.com', 'demo123456')
+    } catch (error) {
+      console.error('Demo login error:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -156,12 +188,20 @@ const Login = ({ onLogin }) => {
                   </div>
                 </div>
 
+                {/* Error Message */}
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+
                 {/* Login Button */}
                 <Button 
                   type="submit"
+                  disabled={loading}
                   className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3"
                 >
-                  Entrar no EvolveYou
+                  {loading ? 'Entrando...' : 'Entrar no EvolveYou'}
                 </Button>
 
                 {/* Divider */}
@@ -174,12 +214,24 @@ const Login = ({ onLogin }) => {
                   </div>
                 </div>
 
+                {/* Google Login Button */}
+                <Button 
+                  type="button"
+                  variant="outline"
+                  disabled={loading}
+                  onClick={handleGoogleLogin}
+                  className="w-full"
+                >
+                  Entrar com Google
+                </Button>
+
                 {/* Demo Button */}
                 <Button 
                   type="button"
                   variant="outline"
+                  disabled={loading}
                   className="w-full"
-                  onClick={onLogin}
+                  onClick={handleDemoLogin}
                 >
                   Entrar como Demo
                 </Button>

@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from '@/hooks/useAuth.jsx'
 import Navbar from '@/components/layout/Navbar'
 import Dashboard from '@/components/pages/Dashboard'
 import DashboardAdvanced from '@/components/pages/DashboardAdvanced'
@@ -16,11 +16,24 @@ import Onboarding from '@/components/pages/Onboarding'
 import PlanPresentation from '@/components/pages/PlanPresentation'
 import './App.css'
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(true) // Simulando usuário logado
+function AppContent() {
+  const { user, loading } = useAuth()
 
-  if (!isAuthenticated) {
-    return <Login onLogin={() => setIsAuthenticated(true)} />
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <span className="text-white font-bold text-xl">E</span>
+          </div>
+          <p className="text-gray-600">Carregando EvolveYou...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Login />
   }
 
   return (
@@ -46,6 +59,14 @@ function App() {
         </main>
       </div>
     </Router>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 
