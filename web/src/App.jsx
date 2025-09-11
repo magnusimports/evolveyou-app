@@ -4,6 +4,7 @@ import Navbar from '@/components/layout/Navbar'
 import DashboardSimple from '@/components/pages/DashboardSimple'
 import DashboardAdvanced from '@/components/pages/DashboardAdvanced'
 import Login from '@/components/pages/Login'
+import Register from '@/components/pages/Register'
 import Nutrition from '@/components/pages/Nutrition'
 import Workout from '@/components/pages/Workout'
 import WorkoutPlayer from '@/components/pages/WorkoutPlayer'
@@ -34,7 +35,14 @@ function AppContent() {
   }
 
   if (!user) {
-    return <Login />
+    return (
+      <Router>
+        <Routes>
+          <Route path="/register" element={<Register />} />
+          <Route path="*" element={<Login />} />
+        </Routes>
+      </Router>
+    )
   }
 
   return (
