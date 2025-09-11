@@ -1,16 +1,19 @@
 /**
- * Serviço base para comunicação com as APIs do EvolveYou
+ * Serviço de API centralizado para EvolveYou
+ * Integração com API Gateway e Firebase Auth
  */
+
+import { auth } from '../config/firebase';
 
 // Configuração da API
 const API_CONFIG = {
-  // URL base da API (será atualizada para produção)
+  // URL base da API Gateway
   BASE_URL: process.env.NODE_ENV === 'production' 
     ? 'https://api.evolveyou.com' 
-    : '/api',
+    : 'http://localhost:8080',
   
   // Timeout padrão para requisições
-  TIMEOUT: 10000,
+  TIMEOUT: 30000,
   
   // Headers padrão
   DEFAULT_HEADERS: {
@@ -44,13 +47,15 @@ class ApiService {
       ...options,
     };
 
-    // Adicionar token de autenticação se disponível
-    const token = this.getAuthToken();
+    // Adicionar token de autenticação Firebase se disponível
+    const token = await this.getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
     try {
+      console.log(`🌐 API Request: ${config.method} ${url}`);
+      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
@@ -66,15 +71,28 @@ class ApiService {
       }
 
       const contentType = response.headers.get('content-type');
+      let responseData;
+      
       if (contentType && contentType.includes('application/json')) {
-        return await response.json();
+        responseData = await response.json();
+      } else {
+        responseData = { message: await response.text() };
       }
 
-      return await response.text();
+      console.log(`✅ API Response: ${config.method} ${url}`, responseData);
+      return responseData;
+
     } catch (error) {
+      console.error(`❌ API Error: ${config.method} ${url}`, error);
+      
       if (error.name === 'AbortError') {
-        throw new Error('Requisição cancelada por timeout');
+        throw new Error('Timeout: A requisição demorou muito para responder');
       }
+      
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error('Erro de conexão: Verifique se o servidor está online');
+      }
+      
       throw error;
     }
   }
@@ -108,57 +126,100 @@ class ApiService {
   }
 
   /**
-   * Gerenciamento de token de autenticação
+   * Obtém token de autenticação do Firebase
    */
-  setAuthToken(token) {
-    localStorage.setItem('evolveyou_auth_token', token);
-  }
-
-  getAuthToken() {
-    return localStorage.getItem('evolveyou_auth_token');
-  }
-
-  removeAuthToken() {
-    localStorage.removeItem('evolveyou_auth_token');
+  async getAuthToken() {
+    try {
+      if (auth.currentUser) {
+        return await auth.currentUser.getIdToken();
+      }
+      return null;
+    } catch (error) {
+      console.error('Erro ao obter token Firebase:', error);
+      return null;
+    }
   }
 
   /**
    * Verificar se o usuário está autenticado
    */
   isAuthenticated() {
-    const token = this.getAuthToken();
-    if (!token) return false;
+    return !!auth.currentUser;
+  }
 
-    try {
-      // Decodificar JWT para verificar expiração
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const now = Date.now() / 1000;
-      
-      return payload.exp > now;
-    } catch (error) {
-      console.error('Erro ao verificar token:', error);
-      return false;
-    }
+  // === MÉTODOS ESPECÍFICOS PARA API GATEWAY ===
+
+  // Health Check
+  async healthCheck() {
+    return this.get('/health');
+  }
+
+  // Usuários
+  async getUserProfile(userId) {
+    return this.get(`/users/profile/${userId}`);
+  }
+
+  async updateUserProfile(userId, profileData) {
+    return this.put(`/users/profile/${userId}`, profileData);
+  }
+
+  async getUserStats(userId) {
+    return this.get(`/users/stats/${userId}`);
+  }
+
+  // Planos
+  async getUserPlan(userId) {
+    return this.get(`/plans/user/${userId}`);
+  }
+
+  async generateNewPlan(userId, preferences) {
+    return this.post(`/plans/generate/${userId}`, preferences);
+  }
+
+  // Tracking
+  async getProgress(userId) {
+    return this.get(`/tracking/progress/${userId}`);
+  }
+
+  async logMeal(userId, mealData) {
+    return this.post(`/tracking/meals/${userId}`, mealData);
+  }
+
+  async logWorkout(userId, workoutData) {
+    return this.post(`/tracking/workouts/${userId}`, workoutData);
+  }
+
+  async getMeals(userId, date) {
+    return this.get(`/tracking/meals/${userId}?date=${date}`);
+  }
+
+  async getWorkouts(userId, date) {
+    return this.get(`/tracking/workouts/${userId}?date=${date}`);
+  }
+
+  // Coach EVO
+  async sendMessageToEVO(userId, message) {
+    return this.post(`/evo/chat/${userId}`, { message });
+  }
+
+  async getEVOHistory(userId) {
+    return this.get(`/evo/history/${userId}`);
+  }
+
+  // Conteúdo
+  async getArticles(category = null) {
+    const endpoint = category ? `/content/articles?category=${category}` : '/content/articles';
+    return this.get(endpoint);
+  }
+
+  async getVideos(category = null) {
+    const endpoint = category ? `/content/videos?category=${category}` : '/content/videos';
+    return this.get(endpoint);
   }
 }
 
 // Instância singleton do serviço de API
 export const apiService = new ApiService();
-
-// Interceptor para lidar com erros de autenticação
-const originalRequest = apiService.request.bind(apiService);
-apiService.request = async function(endpoint, options = {}) {
-  try {
-    return await originalRequest(endpoint, options);
-  } catch (error) {
-    if (error.message.includes('401')) {
-      // Token expirado ou inválido
-      this.removeAuthToken();
-      window.location.href = '/login';
-    }
-    throw error;
-  }
-};
 
 export default apiService;
 
