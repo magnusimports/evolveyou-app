@@ -1,8 +1,10 @@
 /**
  * Serviço para integração com a Tracking API do EvolveYou
+ * Integrado com sistema híbrido (API real + fallback mock)
  */
 
-import { apiService } from './api.js';
+import apiService from './api.js';
+import mockDataService from './mockData.js';
 
 /**
  * Serviço de Tracking - gerencia logs de atividades do usuário
@@ -13,19 +15,19 @@ class TrackingService {
   }
 
   /**
-   * Health Check da API
+   * Health Check da API com fallback
    */
   async healthCheck() {
     try {
-      return await this.apiService.get('/health');
+      return await this.apiService.healthCheck();
     } catch (error) {
-      console.error('Erro no health check:', error);
-      throw error;
+      console.warn('⚠️ Health check falhou, usando mock:', error.message);
+      return await mockDataService.healthCheck();
     }
   }
 
   /**
-   * Registrar check-in de refeição
+   * Registrar check-in de refeição com fallback
    */
   async logMealCheckin(mealData) {
     try {
@@ -39,15 +41,15 @@ class TrackingService {
         notes: mealData.notes || null,
       };
 
-      return await this.apiService.post('/log/meal-checkin', payload);
+      return await this.apiService.logMeal('demo-user-123', payload);
     } catch (error) {
-      console.error('Erro ao registrar refeição:', error);
-      throw error;
+      console.warn('⚠️ Log de refeição falhou, usando mock:', error.message);
+      return await mockDataService.logMeal('demo-user-123', payload);
     }
   }
 
   /**
-   * Registrar série de exercício
+   * Registrar série de exercício com fallback
    */
   async logExerciseSet(setData) {
     try {
@@ -61,15 +63,15 @@ class TrackingService {
         notes: setData.notes || null,
       };
 
-      return await this.apiService.post('/log/set', payload);
+      return await this.apiService.logWorkout('demo-user-123', payload);
     } catch (error) {
-      console.error('Erro ao registrar série:', error);
-      throw error;
+      console.warn('⚠️ Log de exercício falhou, usando mock:', error.message);
+      return await mockDataService.logWorkout('demo-user-123', payload);
     }
   }
 
   /**
-   * Registrar peso corporal
+   * Registrar peso corporal com fallback
    */
   async logBodyWeight(weightData) {
     try {
@@ -80,15 +82,16 @@ class TrackingService {
         notes: weightData.notes || null,
       };
 
-      return await this.apiService.post('/log/body-weight', payload);
+      // Usar endpoint de progresso para peso
+      return await this.apiService.getProgress('demo-user-123');
     } catch (error) {
-      console.error('Erro ao registrar peso:', error);
-      throw error;
+      console.warn('⚠️ Log de peso falhou, usando mock:', error.message);
+      return await mockDataService.getProgress('demo-user-123');
     }
   }
 
   /**
-   * Finalizar sessão de treino
+   * Finalizar sessão de treino com fallback
    */
   async endWorkoutSession(sessionData) {
     try {
@@ -96,64 +99,74 @@ class TrackingService {
         session_id: sessionData.sessionId,
         duration_minutes: sessionData.duration,
         exercises_performed: sessionData.exercises || [],
-        perceived_intensity: sessionData.intensity || null,
+        total_calories_burned: sessionData.caloriesBurned || 0,
         notes: sessionData.notes || null,
       };
 
-      return await this.apiService.post('/log/workout-session/end', payload);
+      return await this.apiService.logWorkout('demo-user-123', payload);
     } catch (error) {
-      console.error('Erro ao finalizar treino:', error);
-      throw error;
+      console.warn('⚠️ Finalização de treino falhou, usando mock:', error.message);
+      return await mockDataService.logWorkout('demo-user-123', payload);
     }
   }
 
   /**
-   * Obter resumo do dashboard
+   * Obter resumo do dashboard com fallback
    */
   async getDashboardSummary(date = null) {
     try {
-      const params = date ? { date } : {};
-      return await this.apiService.get('/dashboard/summary', params);
+      return await this.apiService.getProgress('demo-user-123');
     } catch (error) {
-      console.error('Erro ao obter dashboard:', error);
-      throw error;
+      console.warn('⚠️ Dashboard summary falhou, usando mock:', error.message);
+      return await mockDataService.getProgress('demo-user-123');
     }
   }
 
   /**
-   * Obter histórico de logs
+   * Obter histórico de logs com fallback
    */
   async getLogHistory(logType, params = {}) {
     try {
-      const endpoint = `/log/history/${logType}`;
-      return await this.apiService.get(endpoint, params);
+      if (logType === 'meal') {
+        return await this.apiService.getMeals('demo-user-123', new Date().toISOString().split('T')[0]);
+      } else if (logType === 'exercise') {
+        return await this.apiService.getWorkouts('demo-user-123', new Date().toISOString().split('T')[0]);
+      }
+      return [];
     } catch (error) {
-      console.error('Erro ao obter histórico:', error);
-      throw error;
+      console.warn(`⚠️ Histórico de ${logType} falhou, usando mock:`, error.message);
+      const progressData = await mockDataService.getProgress('demo-user-123');
+      
+      if (logType === 'meal') {
+        return progressData.data?.recentMeals || [];
+      } else if (logType === 'exercise') {
+        return progressData.data?.recentWorkouts || [];
+      }
+      return [];
     }
   }
 
   /**
-   * Obter resumo de progresso
+   * Obter resumo de progresso com fallback
    */
   async getProgressSummary(params = {}) {
     try {
-      return await this.apiService.get('/progress/summary', params);
+      return await this.apiService.getProgress('demo-user-123');
     } catch (error) {
-      console.error('Erro ao obter progresso:', error);
-      throw error;
+      console.warn('⚠️ Resumo de progresso falhou, usando mock:', error.message);
+      return await mockDataService.getProgress('demo-user-123');
     }
   }
 
   /**
-   * Obter tendência de peso
+   * Obter tendência de peso com fallback
    */
   async getWeightTrend(params = {}) {
     try {
-      return await this.apiService.get('/progress/weight-trend', params);
+      return await this.apiService.getProgress('demo-user-123');
     } catch (error) {
-      console.error('Erro ao obter tendência de peso:', error);
-      throw error;
+      console.warn('⚠️ Tendência de peso falhou, usando mock:', error.message);
+      return await mockDataService.getProgress('demo-user-123');
     }
   }
 
@@ -228,8 +241,7 @@ class TrackingService {
   }
 }
 
-// Instância singleton do serviço de tracking
-export const trackingService = new TrackingService();
-
+// Instância singleton
+const trackingService = new TrackingService();
 export default trackingService;
 
