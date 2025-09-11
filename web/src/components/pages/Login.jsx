@@ -19,7 +19,7 @@ const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const { signIn, signInWithGoogle, error } = useAuth()
+  const { signIn, signInWithGoogle, signInDemo, error } = useAuth()
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -47,8 +47,7 @@ const Login = () => {
   const handleDemoLogin = async () => {
     setLoading(true)
     try {
-      // Demo credentials
-      await signIn('demo@evolveyou.com', 'demo123456')
+      await signInDemo()
     } catch (error) {
       console.error('Demo login error:', error)
     } finally {
