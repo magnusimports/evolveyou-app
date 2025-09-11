@@ -55,6 +55,24 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Demo login - bypasses Firebase for demonstration
+  const signInDemo = async () => {
+    try {
+      setError(null);
+      const demoUser = {
+        uid: 'demo-user-123',
+        email: 'demo@evolveyou.com',
+        displayName: 'Usuário Demo',
+        photoURL: null
+      };
+      setUser(demoUser);
+      return demoUser;
+    } catch (error) {
+      setError(error.message);
+      throw error;
+    }
+  };
+
   // Sign out
   const logout = async () => {
     try {
@@ -83,6 +101,7 @@ export function AuthProvider({ children }) {
     signUp,
     signIn,
     signInWithGoogle,
+    signInDemo,
     logout,
     isAuthenticated: !!user
   };
