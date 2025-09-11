@@ -67,18 +67,22 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     
     const config = {
-      method: 'GET',
+      method: options.method || 'GET',
       headers: {
         ...this.defaultHeaders,
         ...options.headers,
       },
-      ...options,
     };
 
     // Adicionar token de autenticação Firebase se disponível
     const token = await this.getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    // Adicionar body para métodos que suportam
+    if (options.data && ['POST', 'PUT', 'PATCH'].includes(config.method)) {
+      config.body = JSON.stringify(options.data);
     }
 
     try {
