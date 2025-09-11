@@ -332,14 +332,11 @@ class MockDataService {
     this.cache = new Map();
   }
 
-  // Simular resposta da API
-  async mockApiResponse(data, shouldFail = false, failureRate = 0.1) {
-    await simulateNetworkDelay();
+  // Simular resposta da API (nunca falha para garantir fallback)
+  async mockApiResponse(data, shouldFail = false, failureRate = 0) {
+    await simulateNetworkDelay(100, 300); // Delay menor para melhor UX
     
-    if (shouldFail || Math.random() < failureRate) {
-      throw new Error('Erro simulado de rede');
-    }
-    
+    // Mock nunca falha para garantir fallback funcional
     return {
       success: true,
       data,
