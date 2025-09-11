@@ -5,12 +5,12 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD-PuRkqWjiz2Sbv0jLVq0b9NOp9kIFwdI",
+  apiKey: "AIzaSyCtt05zPQIHmA3QtObfUvmSGV6VjABAvps",
   authDomain: "evolveyou-prod.firebaseapp.com",
   projectId: "evolveyou-prod",
   storageBucket: "evolveyou-prod.appspot.com",
-  messagingSenderId: "589877359572",
-  appId: "1:589877359572:web:evolveyou-web"
+  messagingSenderId: "278319877545",
+  appId: "1:278319877545:web:evolveyou-web"
 };
 
 // Initialize Firebase
