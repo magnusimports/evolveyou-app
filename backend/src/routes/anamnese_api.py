@@ -6,16 +6,7 @@ APIs para sistema de anamnese inteligente com 22 perguntas estratégicas
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 import logging
-
-# Importar serviços
-try:
-    from ..services.anamnese_service import anamnese_service
-    from ..services.firebase_advanced import firebase_advanced
-    from ..services.gemini_contextual import gemini_contextual
-except ImportError:
-    anamnese_service = None
-    firebase_advanced = None
-    gemini_contextual = None
+import json
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +14,31 @@ logger = logging.getLogger(__name__)
 
 # Criar blueprint
 anamnese_api = Blueprint('anamnese_api', __name__)
+
+# Importar e instanciar serviços diretamente
+try:
+    from src.services.anamnese_service import AnamneseService
+    anamnese_service = AnamneseService()
+    logger.info("AnamneseService carregado com sucesso")
+except Exception as e:
+    logger.error(f"Erro ao carregar AnamneseService: {e}")
+    anamnese_service = None
+
+try:
+    from src.services.firebase_advanced import FirebaseAdvanced
+    firebase_advanced = FirebaseAdvanced()
+    logger.info("FirebaseAdvanced carregado com sucesso")
+except Exception as e:
+    logger.error(f"Erro ao carregar FirebaseAdvanced: {e}")
+    firebase_advanced = None
+
+try:
+    from src.services.gemini_contextual import GeminiContextual
+    gemini_contextual = GeminiContextual()
+    logger.info("GeminiContextual carregado com sucesso")
+except Exception as e:
+    logger.error(f"Erro ao carregar GeminiContextual: {e}")
+    gemini_contextual = None
 
 @anamnese_api.route('/api/v2/anamnese/questions', methods=['GET'])
 def get_anamnese_questions():

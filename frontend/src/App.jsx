@@ -1,130 +1,215 @@
-import { useState, useEffect } from 'react'
-import { Home, Utensils, Dumbbell, MessageCircle } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import './App.css'
+import React, { useEffect } from 'react';
+import { AppProvider, useApp, selectors } from './contexts/AppContext.jsx';
+import dataService from './services/dataService.js';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Home, Utensils, Dumbbell, MessageCircle } from 'lucide-react';
+import AuthScreen from './components/AuthScreen.jsx';
+import AnamneseScreen from './components/AnamneseScreen.jsx';
+import ResumoScreen from './components/ResumoScreen.jsx';
+import NutricaoScreen from './components/NutricaoScreen.jsx';
+import TreinoScreen from './components/TreinoScreen.jsx';
+import CoachScreen from './components/CoachScreen.jsx';
+import './App.css';
 
-// Componentes das telas
-import ResumoScreen from './components/ResumoScreen'
-import NutricaoScreen from './components/NutricaoScreen'
-import TreinoScreen from './components/TreinoScreen'
-import CoachScreen from './components/CoachScreen'
-import AuthScreen from './components/AuthScreen'
-import AnamneseScreen from './components/AnamneseScreen'
-import apiService from './services/api'
+// Componente principal da aplicação
+function AppContent() {
+  const { state, actions } = useApp();
+  const currentScreen = selectors.getCurrentScreen(state);
+  const isAuthenticated = selectors.isAuthenticated(state);
+  const isAnamneseCompleted = selectors.isAnamneseCompleted(state);
+  const isLoading = selectors.isLoading(state);
 
-function App() {
-  const [activeTab, setActiveTab] = useState('resumo')
-  const [user, setUser] = useState(null)
-  const [userProfile, setUserProfile] = useState(null)
-  const [needsAnamnese, setNeedsAnamnese] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-
+  // Inicialização da aplicação
   useEffect(() => {
-    // Verificar se há usuário salvo no localStorage
-    const savedUser = localStorage.getItem('evolveyou_user')
-    const savedProfile = localStorage.getItem('user_profile')
-    
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser)
-        setUser(userData)
-        apiService.setUserId(userData.id)
-        
-        // Verificar se tem perfil completo da anamnese
-        if (savedProfile) {
-          const profileData = JSON.parse(savedProfile)
-          setUserProfile(profileData)
-          
-          // Verificar se precisa fazer anamnese
-          if (!profileData.anamnese_completed) {
-            setNeedsAnamnese(true)
-          }
-        } else {
-          // Usuário logado mas sem perfil da anamnese
-          setNeedsAnamnese(true)
-        }
-      } catch (error) {
-        console.error('Erro ao carregar usuário salvo:', error)
-        localStorage.removeItem('evolveyou_user')
-        localStorage.removeItem('user_profile')
+    initializeApp();
+  }, []);
+
+  const initializeApp = async () => {
+    try {
+      actions.setLoading(true);
+      
+      // Verificar se há dados salvos
+      const savedProfile = dataService.getFromLocalStorage('user_profile');
+      const savedUser = dataService.getFromLocalStorage('evolveyou_user');
+      
+      if (savedUser) {
+        actions.loginUser(savedUser);
       }
+      
+      if (savedProfile) {
+        actions.updateProfile(savedProfile);
+        
+        if (savedProfile.anamnese_completed) {
+          actions.completeAnamnese({
+            profile: savedProfile,
+            score: savedProfile?.anamnese_score || {},
+            recommendations: savedProfile?.recommendations || {},
+            prescriptions: {
+              workout: savedProfile?.workout_plan,
+              nutrition: savedProfile?.nutrition_plan,
+              hydration: savedProfile?.hydration_plan
+            }
+          });
+        }
+      }
+      
+      // Determinar tela inicial
+      if (savedUser) {
+        if (savedProfile?.anamnese_completed) {
+          actions.setCurrentScreen('dashboard');
+          await loadDashboardData();
+        } else {
+          actions.setCurrentScreen('anamnese');
+        }
+      } else {
+        actions.setCurrentScreen('auth');
+      }
+      
+    } catch (error) {
+      console.error('Erro na inicialização:', error);
+      actions.setError('Erro ao inicializar aplicativo');
+    } finally {
+      actions.setLoading(false);
     }
-    setIsLoading(false)
-  }, [])
+  };
+
+  const loadDashboardData = async () => {
+    try {
+      const userId = state.user.id || 'guest_user';
+      
+      // Carregar dados do dashboard em paralelo
+      const [metrics, activityRings] = await Promise.all([
+        dataService.loadDashboardMetrics(userId),
+        dataService.loadActivityRings(userId)
+      ]);
+      
+      if (metrics) {
+        actions.updateMetrics(metrics);
+      }
+      
+      if (activityRings) {
+        actions.updateActivityRings(activityRings);
+      }
+      
+    } catch (error) {
+      console.error('Erro ao carregar dados do dashboard:', error);
+    }
+  };
 
   const handleLogin = async (userData) => {
-    setUser(userData)
-    apiService.setUserId(userData.id)
-    localStorage.setItem('evolveyou_user', JSON.stringify(userData))
-    
-    // Verificar se usuário precisa fazer anamnese
-    if (!userData.anamnese_completed) {
-      setNeedsAnamnese(true)
-    } else {
-      setUserProfile(userData)
-      localStorage.setItem('user_profile', JSON.stringify(userData))
+    try {
+      actions.setLoading(true);
+      actions.loginUser(userData);
+      
+      // Salvar no localStorage
+      dataService.saveToLocalStorage('evolveyou_user', userData);
+      
+      // Verificar se precisa fazer anamnese
+      const profile = dataService.getFromLocalStorage('user_profile');
+      
+      if (profile && profile.anamnese_completed) {
+        actions.updateProfile(profile);
+        actions.setCurrentScreen('dashboard');
+        await loadDashboardData();
+      } else {
+        actions.setCurrentScreen('anamnese');
+      }
+      
+    } catch (error) {
+      console.error('Erro no login:', error);
+      actions.setError('Erro ao fazer login');
+    } finally {
+      actions.setLoading(false);
     }
-  }
+  };
 
-  const handleAnamneseComplete = (anamneseData) => {
-    // Salvar perfil completo da anamnese
-    setUserProfile(anamneseData.profile)
-    localStorage.setItem('user_profile', JSON.stringify(anamneseData.profile))
-    
-    // Atualizar dados do usuário
-    const updatedUser = { ...user, ...anamneseData.profile }
-    setUser(updatedUser)
-    localStorage.setItem('evolveyou_user', JSON.stringify(updatedUser))
-    
-    setNeedsAnamnese(false)
-    
-    // Mostrar mensagem de boas-vindas
-    if (anamneseData.welcome_message) {
-      setTimeout(() => {
-        alert(anamneseData.welcome_message)
-      }, 1000)
+  const handleAnamneseComplete = async (anamneseData) => {
+    try {
+      actions.setLoading(true);
+      
+      // Submeter anamnese e obter perfil
+      const result = await dataService.submitAnamnese(anamneseData.answers);
+      
+      if (result.success && result.profile) {
+        // Calcular dados derivados
+        const enhancedProfile = dataService.calculateDerivedData(result.profile);
+        
+        // Atualizar estado global
+        actions.completeAnamnese({
+          profile: enhancedProfile,
+          score: enhancedProfile.anamnese_score || {},
+          recommendations: enhancedProfile.recommendations || {},
+          prescriptions: {
+            workout: enhancedProfile.workout_plan,
+            nutrition: enhancedProfile.nutrition_plan,
+            hydration: enhancedProfile.hydration_plan
+          }
+        });
+        
+        // Carregar dados do dashboard
+        await loadDashboardData();
+        
+        actions.setCurrentScreen('dashboard');
+      } else {
+        throw new Error(result.message || 'Erro ao processar anamnese');
+      }
+      
+    } catch (error) {
+      console.error('Erro ao completar anamnese:', error);
+      actions.setError('Erro ao processar anamnese. Tente novamente.');
+    } finally {
+      actions.setLoading(false);
     }
-  }
+  };
 
   const handleLogout = () => {
-    setUser(null)
-    setUserProfile(null)
-    setNeedsAnamnese(false)
-    apiService.setUserId('default_user')
-    localStorage.removeItem('evolveyou_user')
-    localStorage.removeItem('user_profile')
-    localStorage.removeItem('user_id')
-    setActiveTab('resumo')
-  }
+    dataService.clearAllData();
+    actions.logoutUser();
+  };
 
+  // Renderizar tela de loading
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white">Carregando EvolveYou...</p>
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-lg">Carregando EvolveYou...</p>
         </div>
       </div>
-    )
+    );
   }
 
-  if (!user) {
-    return <AuthScreen onLogin={handleLogin} />
+  // Renderizar tela baseada no estado atual
+  switch (currentScreen) {
+    case 'auth':
+      return <AuthScreen onLogin={handleLogin} />;
+      
+    case 'anamnese':
+      return <AnamneseScreen onComplete={handleAnamneseComplete} />;
+      
+    case 'dashboard':
+      return <DashboardApp onLogout={handleLogout} />;
+      
+    default:
+      return <AuthScreen onLogin={handleLogin} />;
   }
+}
 
-  // Mostrar anamnese se necessário
-  if (needsAnamnese) {
-    return <AnamneseScreen onComplete={handleAnamneseComplete} />
-  }
+// Componente do dashboard com navegação
+function DashboardApp({ onLogout }) {
+  const { state, actions } = useApp();
+  const [activeTab, setActiveTab] = React.useState('resumo');
+  const user = selectors.getUser(state);
+  const profile = selectors.getProfile(state);
 
   const tabs = [
     { id: 'resumo', label: 'Resumo', icon: Home, component: ResumoScreen },
     { id: 'nutricao', label: 'Nutrição', icon: Utensils, component: NutricaoScreen },
     { id: 'treino', label: 'Treino', icon: Dumbbell, component: TreinoScreen },
     { id: 'coach', label: 'Coach EVO', icon: MessageCircle, component: CoachScreen }
-  ]
+  ];
 
-  const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component
+  const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || ResumoScreen;
 
   return (
     <div className="dark min-h-screen bg-black text-white">
@@ -138,7 +223,7 @@ function App() {
             {activeTab === 'coach' && 'Coach EVO'}
           </h1>
           <p className="text-gray-400 text-sm">
-            {activeTab === 'resumo' && 'Quinta-feira, 11 de set.'}
+            {activeTab === 'resumo' && new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' })}
             {activeTab === 'nutricao' && 'Plano personalizado'}
             {activeTab === 'treino' && 'Seu programa de exercícios'}
             {activeTab === 'coach' && 'Seu assistente pessoal'}
@@ -146,7 +231,7 @@ function App() {
         </div>
         <div className="flex items-center space-x-3">
           {/* Status da Anamnese */}
-          {userProfile?.anamnese_completed && (
+          {profile.anamnese_completed && (
             <div className="flex items-center bg-gray-900/80 backdrop-blur-sm rounded-full px-3 py-1 text-xs">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
               <span className="text-green-400">Anamnese Completa</span>
@@ -155,10 +240,10 @@ function App() {
           
           <div className="text-right">
             <p className="text-white text-sm font-medium">
-              {userProfile?.name || user.name}
+              {profile.name || user.name || 'Usuário'}
             </p>
             <button
-              onClick={handleLogout}
+              onClick={onLogout}
               className="text-gray-400 hover:text-white text-xs transition-colors"
             >
               Sair
@@ -166,7 +251,7 @@ function App() {
           </div>
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
             <span className="text-white font-semibold text-sm">
-              {(userProfile?.name || user.name).charAt(0).toUpperCase()}
+              {(profile.name || user.name || 'U').charAt(0).toUpperCase()}
             </span>
           </div>
         </div>
@@ -182,7 +267,7 @@ function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
-            {ActiveComponent && <ActiveComponent user={user} userProfile={userProfile} />}
+            <ActiveComponent user={user} userProfile={profile} />
           </motion.div>
         </AnimatePresence>
       </main>
@@ -191,8 +276,8 @@ function App() {
       <nav className="fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-lg border-t border-gray-800">
         <div className="flex items-center justify-around py-2">
           {tabs.map((tab) => {
-            const Icon = tab.icon
-            const isActive = activeTab === tab.id
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
             
             return (
               <motion.button
@@ -225,7 +310,7 @@ function App() {
                   {tab.label}
                 </span>
               </motion.button>
-            )
+            );
           })}
         </div>
       </nav>
@@ -238,15 +323,24 @@ function App() {
         </div>
         
         {/* Score da Anamnese */}
-        {userProfile?.anamnese_score?.total && (
+        {profile.anamnese_score?.score_total && (
           <div className="flex items-center bg-gray-900/80 backdrop-blur-sm rounded-full px-3 py-1 text-xs">
-            <span className="text-blue-400">Score: {Math.round(userProfile.anamnese_score.total)}/100</span>
+            <span className="text-blue-400">Score: {Math.round(profile.anamnese_score.score_total)}/100</span>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+// App principal com Provider
+function App() {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  );
+}
+
+export default App;
 
