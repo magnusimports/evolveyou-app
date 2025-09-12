@@ -9,39 +9,91 @@ import NutricaoScreen from './components/NutricaoScreen'
 import TreinoScreen from './components/TreinoScreen'
 import CoachScreen from './components/CoachScreen'
 import AuthScreen from './components/AuthScreen'
+import AnamneseScreen from './components/AnamneseScreen'
 import apiService from './services/api'
 
 function App() {
   const [activeTab, setActiveTab] = useState('resumo')
   const [user, setUser] = useState(null)
+  const [userProfile, setUserProfile] = useState(null)
+  const [needsAnamnese, setNeedsAnamnese] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     // Verificar se há usuário salvo no localStorage
     const savedUser = localStorage.getItem('evolveyou_user')
+    const savedProfile = localStorage.getItem('user_profile')
+    
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser)
         setUser(userData)
         apiService.setUserId(userData.id)
+        
+        // Verificar se tem perfil completo da anamnese
+        if (savedProfile) {
+          const profileData = JSON.parse(savedProfile)
+          setUserProfile(profileData)
+          
+          // Verificar se precisa fazer anamnese
+          if (!profileData.anamnese_completed) {
+            setNeedsAnamnese(true)
+          }
+        } else {
+          // Usuário logado mas sem perfil da anamnese
+          setNeedsAnamnese(true)
+        }
       } catch (error) {
         console.error('Erro ao carregar usuário salvo:', error)
         localStorage.removeItem('evolveyou_user')
+        localStorage.removeItem('user_profile')
       }
     }
     setIsLoading(false)
   }, [])
 
-  const handleLogin = (userData) => {
+  const handleLogin = async (userData) => {
     setUser(userData)
     apiService.setUserId(userData.id)
     localStorage.setItem('evolveyou_user', JSON.stringify(userData))
+    
+    // Verificar se usuário precisa fazer anamnese
+    if (!userData.anamnese_completed) {
+      setNeedsAnamnese(true)
+    } else {
+      setUserProfile(userData)
+      localStorage.setItem('user_profile', JSON.stringify(userData))
+    }
+  }
+
+  const handleAnamneseComplete = (anamneseData) => {
+    // Salvar perfil completo da anamnese
+    setUserProfile(anamneseData.profile)
+    localStorage.setItem('user_profile', JSON.stringify(anamneseData.profile))
+    
+    // Atualizar dados do usuário
+    const updatedUser = { ...user, ...anamneseData.profile }
+    setUser(updatedUser)
+    localStorage.setItem('evolveyou_user', JSON.stringify(updatedUser))
+    
+    setNeedsAnamnese(false)
+    
+    // Mostrar mensagem de boas-vindas
+    if (anamneseData.welcome_message) {
+      setTimeout(() => {
+        alert(anamneseData.welcome_message)
+      }, 1000)
+    }
   }
 
   const handleLogout = () => {
     setUser(null)
+    setUserProfile(null)
+    setNeedsAnamnese(false)
     apiService.setUserId('default_user')
     localStorage.removeItem('evolveyou_user')
+    localStorage.removeItem('user_profile')
+    localStorage.removeItem('user_id')
     setActiveTab('resumo')
   }
 
@@ -58,6 +110,11 @@ function App() {
 
   if (!user) {
     return <AuthScreen onLogin={handleLogin} />
+  }
+
+  // Mostrar anamnese se necessário
+  if (needsAnamnese) {
+    return <AnamneseScreen onComplete={handleAnamneseComplete} />
   }
 
   const tabs = [
@@ -88,8 +145,18 @@ function App() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          {/* Status da Anamnese */}
+          {userProfile?.anamnese_completed && (
+            <div className="flex items-center bg-gray-900/80 backdrop-blur-sm rounded-full px-3 py-1 text-xs">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+              <span className="text-green-400">Anamnese Completa</span>
+            </div>
+          )}
+          
           <div className="text-right">
-            <p className="text-white text-sm font-medium">{user.name}</p>
+            <p className="text-white text-sm font-medium">
+              {userProfile?.name || user.name}
+            </p>
             <button
               onClick={handleLogout}
               className="text-gray-400 hover:text-white text-xs transition-colors"
@@ -99,7 +166,7 @@ function App() {
           </div>
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
             <span className="text-white font-semibold text-sm">
-              {user.name.charAt(0).toUpperCase()}
+              {(userProfile?.name || user.name).charAt(0).toUpperCase()}
             </span>
           </div>
         </div>
@@ -115,7 +182,7 @@ function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
-            {ActiveComponent && <ActiveComponent user={user} />}
+            {ActiveComponent && <ActiveComponent user={user} userProfile={userProfile} />}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -169,6 +236,13 @@ function App() {
           <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
           <span className="text-gray-300">Firebase + Gemini AI</span>
         </div>
+        
+        {/* Score da Anamnese */}
+        {userProfile?.anamnese_score?.total && (
+          <div className="flex items-center bg-gray-900/80 backdrop-blur-sm rounded-full px-3 py-1 text-xs">
+            <span className="text-blue-400">Score: {Math.round(userProfile.anamnese_score.total)}/100</span>
+          </div>
+        )}
       </div>
     </div>
   )
