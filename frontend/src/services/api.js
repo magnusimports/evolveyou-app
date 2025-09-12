@@ -199,6 +199,84 @@ class ApiService {
     return this.request('/api/firebase/gemini/status')
   }
 
+  // Método para submeter anamnese
+  async submitAnamnese(responses) {
+    try {
+      // Tentar API v2 primeiro
+      return await this.request('/api/v2/anamnese/submit', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: this.userId,
+          responses: responses
+        })
+      })
+    } catch (error) {
+      console.warn('API v2 anamnese failed, using fallback:', error)
+      // Fallback para processamento local
+      return {
+        success: true,
+        profile: this.processAnamneseLocally(responses),
+        message: 'Anamnese processada localmente'
+      }
+    }
+  }
+
+  // Processamento local da anamnese como fallback
+  processAnamneseLocally(responses) {
+    const profile = {
+      name: responses[0] || 'Usuário',
+      age: parseInt(responses[1]) || 25,
+      gender: responses[2] || 'masculino',
+      height: parseFloat(responses[3]) || 170,
+      weight: parseFloat(responses[4]) || 70,
+      target_weight: parseFloat(responses[5]) || 65,
+      goal: responses[6] || 'perder_peso',
+      activity_level: responses[7] || 'moderado',
+      experience: responses[21] || 'iniciante'
+    }
+
+    // Calcular TMB usando fórmula de Harris-Benedict
+    let tmb
+    if (profile.gender === 'masculino') {
+      tmb = 88.362 + (13.397 * profile.weight) + (4.799 * profile.height) - (5.677 * profile.age)
+    } else {
+      tmb = 447.593 + (9.247 * profile.weight) + (3.098 * profile.height) - (4.330 * profile.age)
+    }
+
+    // Fator de atividade
+    const activityFactors = {
+      'sedentario': 1.2,
+      'leve': 1.375,
+      'moderado': 1.55,
+      'intenso': 1.725,
+      'muito_intenso': 1.9
+    }
+
+    const activityFactor = activityFactors[profile.activity_level] || 1.55
+    const dailyCalories = Math.round(tmb * activityFactor)
+
+    // Ajustar calorias baseado no objetivo
+    let targetCalories = dailyCalories
+    if (profile.goal === 'perder_peso') {
+      targetCalories = Math.round(dailyCalories * 0.8) // Déficit de 20%
+    } else if (profile.goal === 'ganhar_massa') {
+      targetCalories = Math.round(dailyCalories * 1.15) // Superávit de 15%
+    }
+
+    return {
+      ...profile,
+      tmb: Math.round(tmb),
+      daily_calories: targetCalories,
+      macros: {
+        protein: Math.round(targetCalories * 0.25 / 4), // 25% proteína
+        carbs: Math.round(targetCalories * 0.45 / 4),   // 45% carboidratos
+        fat: Math.round(targetCalories * 0.30 / 9)      // 30% gordura
+      },
+      anamnese_completed: true,
+      created_at: new Date().toISOString()
+    }
+  }
+
   // Método para definir usuário (para futuro sistema de auth)
   setUserId(userId) {
     this.userId = userId

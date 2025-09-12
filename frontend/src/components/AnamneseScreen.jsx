@@ -15,19 +15,307 @@ const AnamneseScreen = ({ onComplete }) => {
   }, []);
 
   const loadQuestions = async () => {
-    try {
-      const response = await fetch('/api/v2/anamnese/questions');
-      const data = await response.json();
-      
-      if (data.success) {
-        setQuestions(data.questions);
-        setCategories(data.categories);
+    // Carregar diretamente as 22 perguntas - sem depender da API
+    console.log('Carregando 22 perguntas diretamente');
+    setQuestions(getFullQuestions());
+    setCategories(getCategories());
+    setLoading(false);
+  };
+
+  const getFullQuestions = () => {
+    return [
+      // DADOS PESSOAIS
+      {
+        id: 1,
+        category: "dados_pessoais",
+        question: "Qual é o seu nome completo?",
+        type: "text",
+        required: true
+      },
+      {
+        id: 2,
+        category: "dados_pessoais",
+        question: "Qual é a sua idade?",
+        type: "number",
+        required: true
+      },
+      {
+        id: 3,
+        category: "dados_pessoais",
+        question: "Qual é o seu sexo biológico?",
+        type: "select",
+        required: true,
+        options: [
+          { value: "masculino", label: "Masculino" },
+          { value: "feminino", label: "Feminino" }
+        ]
+      },
+      {
+        id: 4,
+        category: "antropometria",
+        question: "Qual é a sua altura? (em centímetros)",
+        type: "number",
+        required: true,
+        unit: "cm"
+      },
+      {
+        id: 5,
+        category: "antropometria",
+        question: "Qual é o seu peso atual? (em quilogramas)",
+        type: "number",
+        required: true,
+        unit: "kg"
+      },
+      {
+        id: 6,
+        category: "objetivos",
+        question: "Qual é o seu principal objetivo?",
+        type: "select",
+        required: true,
+        options: [
+          { value: "perder_peso", label: "Perder peso" },
+          { value: "ganhar_massa", label: "Ganhar massa muscular" },
+          { value: "manter_peso", label: "Manter peso atual" },
+          { value: "melhorar_condicionamento", label: "Melhorar condicionamento físico" }
+        ]
+      },
+      {
+        id: 7,
+        category: "objetivos",
+        question: "Qual é o seu peso ideal/meta? (em quilogramas)",
+        type: "number",
+        required: true,
+        unit: "kg"
+      },
+      {
+        id: 8,
+        category: "atividade_fisica",
+        question: "Com que frequência você pratica atividade física atualmente?",
+        type: "select",
+        required: true,
+        options: [
+          { value: "sedentario", label: "Sedentário (nenhuma atividade)" },
+          { value: "leve", label: "Leve (1-2x por semana)" },
+          { value: "moderado", label: "Moderado (3-4x por semana)" },
+          { value: "intenso", label: "Intenso (5-6x por semana)" },
+          { value: "muito_intenso", label: "Muito intenso (todos os dias)" }
+        ]
+      },
+      {
+        id: 9,
+        category: "atividade_fisica",
+        question: "Que tipos de exercício você prefere ou já pratica?",
+        type: "multiple_select",
+        required: false,
+        options: [
+          { value: "musculacao", label: "Musculação" },
+          { value: "cardio", label: "Exercícios cardiovasculares" },
+          { value: "funcional", label: "Treinamento funcional" },
+          { value: "yoga", label: "Yoga/Pilates" },
+          { value: "esportes", label: "Esportes coletivos" },
+          { value: "caminhada", label: "Caminhada/Corrida" }
+        ]
+      },
+      {
+        id: 10,
+        category: "saude",
+        question: "Você possui alguma condição de saúde ou lesão que devemos considerar?",
+        type: "multiple_select",
+        required: false,
+        options: [
+          { value: "diabetes", label: "Diabetes" },
+          { value: "hipertensao", label: "Hipertensão" },
+          { value: "cardiopatia", label: "Problemas cardíacos" },
+          { value: "lesao_joelho", label: "Lesão no joelho" },
+          { value: "lesao_coluna", label: "Problemas na coluna" },
+          { value: "nenhuma", label: "Nenhuma condição especial" }
+        ]
+      },
+      {
+        id: 11,
+        category: "saude",
+        question: "Você toma algum medicamento regularmente?",
+        type: "select",
+        required: true,
+        options: [
+          { value: "nao", label: "Não tomo medicamentos" },
+          { value: "sim_poucos", label: "Sim, poucos medicamentos" },
+          { value: "sim_varios", label: "Sim, vários medicamentos" }
+        ]
+      },
+      {
+        id: 12,
+        category: "alimentacao",
+        question: "Como você descreveria seus hábitos alimentares atuais?",
+        type: "select",
+        required: true,
+        options: [
+          { value: "muito_ruim", label: "Muito ruins (fast food frequente)" },
+          { value: "ruim", label: "Ruins (alimentação irregular)" },
+          { value: "regular", label: "Regulares (algumas refeições saudáveis)" },
+          { value: "bom", label: "Bons (maioria das refeições saudáveis)" },
+          { value: "excelente", label: "Excelentes (alimentação muito equilibrada)" }
+        ]
+      },
+      {
+        id: 13,
+        category: "alimentacao",
+        question: "Você possui alguma restrição alimentar ou alergia?",
+        type: "multiple_select",
+        required: false,
+        options: [
+          { value: "lactose", label: "Intolerância à lactose" },
+          { value: "gluten", label: "Intolerância ao glúten/Celíaco" },
+          { value: "vegetariano", label: "Vegetariano" },
+          { value: "vegano", label: "Vegano" },
+          { value: "diabetes", label: "Restrições por diabetes" },
+          { value: "nenhuma", label: "Nenhuma restrição" }
+        ]
+      },
+      {
+        id: 14,
+        category: "alimentacao",
+        question: "Quantas refeições você faz por dia normalmente?",
+        type: "select",
+        required: true,
+        options: [
+          { value: "1-2", label: "1-2 refeições" },
+          { value: "3", label: "3 refeições" },
+          { value: "4-5", label: "4-5 refeições" },
+          { value: "6+", label: "6 ou mais refeições" }
+        ]
+      },
+      {
+        id: 15,
+        category: "hidratacao",
+        question: "Quantos litros de água você bebe por dia aproximadamente?",
+        type: "select",
+        required: true,
+        options: [
+          { value: "menos_1", label: "Menos de 1 litro" },
+          { value: "1-1.5", label: "1 a 1,5 litros" },
+          { value: "1.5-2", label: "1,5 a 2 litros" },
+          { value: "2-3", label: "2 a 3 litros" },
+          { value: "mais_3", label: "Mais de 3 litros" }
+        ]
+      },
+      {
+        id: 16,
+        category: "sono",
+        question: "Quantas horas você dorme por noite em média?",
+        type: "select",
+        required: true,
+        options: [
+          { value: "menos_5", label: "Menos de 5 horas" },
+          { value: "5-6", label: "5 a 6 horas" },
+          { value: "6-7", label: "6 a 7 horas" },
+          { value: "7-8", label: "7 a 8 horas" },
+          { value: "8-9", label: "8 a 9 horas" },
+          { value: "mais_9", label: "Mais de 9 horas" }
+        ]
+      },
+      {
+        id: 17,
+        category: "sono",
+        question: "Como você avalia a qualidade do seu sono?",
+        type: "select",
+        required: true,
+        options: [
+          { value: "muito_ruim", label: "Muito ruim (acordo várias vezes)" },
+          { value: "ruim", label: "Ruim (acordo cansado)" },
+          { value: "regular", label: "Regular (às vezes acordo cansado)" },
+          { value: "boa", label: "Boa (acordo descansado)" },
+          { value: "excelente", label: "Excelente (sono reparador)" }
+        ]
+      },
+      {
+        id: 18,
+        category: "estilo_vida",
+        question: "Qual é o seu nível de estresse no dia a dia?",
+        type: "select",
+        required: true,
+        options: [
+          { value: "muito_baixo", label: "Muito baixo" },
+          { value: "baixo", label: "Baixo" },
+          { value: "moderado", label: "Moderado" },
+          { value: "alto", label: "Alto" },
+          { value: "muito_alto", label: "Muito alto" }
+        ]
+      },
+      {
+        id: 19,
+        category: "estilo_vida",
+        question: "Você fuma ou consome álcool regularmente?",
+        type: "multiple_select",
+        required: true,
+        options: [
+          { value: "nao_fumo_nao_bebo", label: "Não fumo e não bebo" },
+          { value: "fumo_ocasional", label: "Fumo ocasionalmente" },
+          { value: "alcool_ocasional", label: "Bebo ocasionalmente" },
+          { value: "alcool_regular", label: "Bebo regularmente" }
+        ]
+      },
+      {
+        id: 20,
+        category: "motivacao",
+        question: "O que mais te motiva a buscar uma vida mais saudável?",
+        type: "multiple_select",
+        required: true,
+        options: [
+          { value: "saude", label: "Melhorar a saúde geral" },
+          { value: "estetica", label: "Questões estéticas" },
+          { value: "autoestima", label: "Aumentar autoestima" },
+          { value: "energia", label: "Ter mais energia" },
+          { value: "longevidade", label: "Viver mais e melhor" },
+          { value: "familia", label: "Ser exemplo para a família" }
+        ]
+      },
+      {
+        id: 21,
+        category: "disponibilidade",
+        question: "Quanto tempo você pode dedicar aos exercícios por dia?",
+        type: "select",
+        required: true,
+        options: [
+          { value: "15-30min", label: "15 a 30 minutos" },
+          { value: "30-45min", label: "30 a 45 minutos" },
+          { value: "45-60min", label: "45 a 60 minutos" },
+          { value: "60-90min", label: "60 a 90 minutos" },
+          { value: "mais_90min", label: "Mais de 90 minutos" }
+        ]
+      },
+      {
+        id: 22,
+        category: "experiencia",
+        question: "Qual é a sua experiência anterior com programas de fitness/nutrição?",
+        type: "select",
+        required: true,
+        options: [
+          { value: "nenhuma", label: "Nenhuma experiência" },
+          { value: "pouca", label: "Pouca experiência (tentativas isoladas)" },
+          { value: "moderada", label: "Experiência moderada (alguns programas)" },
+          { value: "boa", label: "Boa experiência (vários programas)" },
+          { value: "extensa", label: "Experiência extensa (lifestyle)" }
+        ]
       }
-    } catch (error) {
-      console.error('Erro ao carregar perguntas:', error);
-    } finally {
-      setLoading(false);
-    }
+    ];
+  };
+
+  const getCategories = () => {
+    return {
+      dados_pessoais: { name: "Dados Pessoais", icon: "User" },
+      antropometria: { name: "Antropometria", icon: "Activity" },
+      objetivos: { name: "Objetivos", icon: "Target" },
+      atividade_fisica: { name: "Atividade Física", icon: "Activity" },
+      saude: { name: "Saúde", icon: "Heart" },
+      alimentacao: { name: "Alimentação", icon: "Utensils" },
+      hidratacao: { name: "Hidratação", icon: "Droplets" },
+      sono: { name: "Sono", icon: "Moon" },
+      estilo_vida: { name: "Estilo de Vida", icon: "Coffee" },
+      motivacao: { name: "Motivação", icon: "Zap" },
+      disponibilidade: { name: "Disponibilidade", icon: "Clock" },
+      experiencia: { name: "Experiência", icon: "BookOpen" }
+    };
   };
 
   const validateAnswer = async (questionId, answer) => {
@@ -43,12 +331,40 @@ const AnamneseScreen = ({ onComplete }) => {
         })
       });
       
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
       const data = await response.json();
-      return data.validation;
+      return data.validation || { valid: true };
     } catch (error) {
-      console.error('Erro na validação:', error);
-      return { valid: true };
+      console.warn('Validação API falhou, usando validação local:', error);
+      // Fallback para validação local
+      return validateAnswerLocally(questionId, answer);
     }
+  };
+
+  const validateAnswerLocally = (questionId, answer) => {
+    const question = getQuestions().find(q => q.id === questionId);
+    if (!question) return { valid: true };
+
+    // Validação básica local
+    if (question.required && (!answer || answer.toString().trim() === '')) {
+      return { valid: false, message: 'Este campo é obrigatório' };
+    }
+
+    if (question.type === 'number') {
+      const num = parseFloat(answer);
+      if (isNaN(num) || num <= 0) {
+        return { valid: false, message: 'Digite um número válido' };
+      }
+    }
+
+    if (question.type === 'text' && answer && answer.length < 2) {
+      return { valid: false, message: 'Digite pelo menos 2 caracteres' };
+    }
+
+    return { valid: true };
   };
 
   const handleAnswerChange = async (questionId, answer) => {
