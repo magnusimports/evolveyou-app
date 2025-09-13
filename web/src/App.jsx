@@ -20,6 +20,7 @@ import MealRegistration from '@/components/pages/MealRegistration'
 import Onboarding from '@/components/pages/Onboarding'
 import PlanPresentation from '@/components/pages/PlanPresentation'
 import ApiTest from '@/components/pages/ApiTest'
+import EnhancedBMRCalculator from '@/components/EnhancedBMRCalculator'
 import './App.css'
 
 function AppContent() {
@@ -58,6 +59,7 @@ function AppContent() {
           <Route path="/nutrition" element={<NutritionManus />} />
           <Route path="/workout" element={<WorkoutManus />} />
           <Route path="/coach" element={<CoachEVOManus />} />
+          <Route path="/enhanced-bmr" element={<EnhancedBMRCalculator />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/meals" element={<MealRegistration />} />
           <Route path="/meal-registration" element={<MealRegistration />} />
