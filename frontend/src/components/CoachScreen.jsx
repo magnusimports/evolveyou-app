@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp, selectors } from '../contexts/AppContext.jsx';
 import dataService from '../services/dataService.js';
+import apiService from '../services/api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CoachScreen = () => {
@@ -218,53 +219,37 @@ const CoachScreen = () => {
     setIsLoading(true);
 
     try {
-      // Construir prompt contextual
-      const contextualPrompt = buildContextualPrompt(userMessage.text);
-      
-      // Enviar para API
-      const response = await fetch('/api/v2/coach/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: contextualPrompt,
-          user_id: user.id || 'guest_user',
-          context: {
-            profile: profile,
-            timestamp: new Date().toISOString(),
-            conversation_history: messages.slice(-10) // Últimas 10 mensagens
-          }
-        }),
-      });
+      // Enviar para nova API do Coach
+      const response = await apiService.sendChatMessage(
+        user.id || 'guest_user',
+        userMessage.text,
+        messages.slice(-10) // Últimas 10 mensagens para contexto
+      );
 
-      const data = await response.json();
-      
-      const coachMessage = {
-        id: Date.now() + 1,
-        text: data.response || 'Desculpe, não consegui processar sua mensagem. Tente novamente.',
-        sender: 'coach',
-        timestamp: new Date().toISOString(),
-        type: 'response'
-      };
-
-      setMessages(prev => [...prev, coachMessage]);
-      
-      // Salvar no histórico
-      const updatedHistory = [...messages, userMessage, coachMessage];
-      await dataService.saveChatMessage(updatedHistory);
-      
+      if (response && response.success) {
+        // Adicionar resposta do coach
+        setMessages(prev => [...prev, response.data.coach_response]);
+      } else {
+        // Fallback se API falhar
+        const fallbackResponse = response?.fallback_response || {
+          id: Date.now() + 1,
+          text: "Desculpe, estou com dificuldades técnicas no momento. Tente novamente! 💪",
+          sender: 'coach',
+          timestamp: new Date().toISOString(),
+          type: 'response'
+        };
+        setMessages(prev => [...prev, fallbackResponse]);
+      }
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      
+      // Adicionar mensagem de erro
       const errorMessage = {
         id: Date.now() + 1,
-        text: 'Ops! Tive um problema técnico. Tente novamente em alguns instantes. 🤖',
+        text: "Ops! Algo deu errado. Tente novamente em alguns instantes.",
         sender: 'coach',
         timestamp: new Date().toISOString(),
         type: 'error'
       };
-      
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);

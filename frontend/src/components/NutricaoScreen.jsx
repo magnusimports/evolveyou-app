@@ -19,7 +19,6 @@ const NutricaoScreen = () => {
 
   useEffect(() => {
     loadNutritionData();
-    simulateCurrentIntake();
   }, [profile]);
 
   const loadNutritionData = async () => {
@@ -27,10 +26,18 @@ const NutricaoScreen = () => {
       setLoading(true);
       const userId = user.id || 'guest_user';
       
-      // Carregar plano nutricional
-      const plan = await dataService.loadNutritionPlan(userId);
+      // Carregar plano nutricional e consumo atual
+      const [plan, intake] = await Promise.all([
+        dataService.loadNutritionPlan(userId),
+        apiService.getCurrentIntake(userId)
+      ]);
+      
       if (plan) {
         setNutritionPlan(plan);
+      }
+      
+      if (intake && intake.success) {
+        setCurrentIntake(intake.data.current_intake);
       }
       
     } catch (error) {
@@ -38,39 +45,6 @@ const NutricaoScreen = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const simulateCurrentIntake = () => {
-    if (!profile.dailyCalories) return;
-
-    // Simular consumo baseado no horário do dia
-    const currentHour = new Date().getHours();
-    let progressFactor = 0;
-
-    if (currentHour >= 6 && currentHour < 12) {
-      progressFactor = 0.25; // Manhã - 25%
-    } else if (currentHour >= 12 && currentHour < 18) {
-      progressFactor = 0.65; // Tarde - 65%
-    } else if (currentHour >= 18 && currentHour < 22) {
-      progressFactor = 0.85; // Noite - 85%
-    } else {
-      progressFactor = 0.90; // Madrugada - 90%
-    }
-
-    // Adicionar variação baseada no objetivo
-    if (profile.goal === 'perder_peso') {
-      progressFactor *= 0.8; // Consumo menor para perda de peso
-    } else if (profile.goal === 'ganhar_massa') {
-      progressFactor *= 1.1; // Consumo maior para ganho de massa
-    }
-
-    setCurrentIntake({
-      calories: Math.round(profile.dailyCalories * progressFactor),
-      protein: Math.round((profile.macros?.protein || 0) * progressFactor),
-      carbs: Math.round((profile.macros?.carbs || 0) * progressFactor),
-      fat: Math.round((profile.macros?.fat || 0) * progressFactor),
-      water: Math.round((profile.waterIntake || 2000) * progressFactor)
-    });
   };
 
   // Componente de barra de progresso nutricional

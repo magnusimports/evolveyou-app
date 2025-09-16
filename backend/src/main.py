@@ -11,6 +11,10 @@ from flask_cors import CORS
 from src.routes.fitness import fitness_bp
 from src.routes.advanced_api import advanced_api
 from src.routes.anamnese_api_fixed import anamnese_api
+from src.routes.dashboard_api import dashboard_api
+from src.routes.workout_api import workout_api
+from src.routes.nutrition_api import nutrition_api
+from src.routes.coach_api import coach_api
 # Comentando Firebase para deploy
 # from src.routes.fitness_firebase import fitness_firebase_bp
 
@@ -25,6 +29,10 @@ CORS(app)
 app.register_blueprint(fitness_bp, url_prefix='/api/fitness')
 app.register_blueprint(advanced_api)
 app.register_blueprint(anamnese_api)
+app.register_blueprint(dashboard_api)
+app.register_blueprint(workout_api)
+app.register_blueprint(nutrition_api)
+app.register_blueprint(coach_api)
 # Comentando Firebase para deploy
 # app.register_blueprint(fitness_firebase_bp, url_prefix='/api/firebase')
 

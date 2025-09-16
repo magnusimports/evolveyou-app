@@ -282,9 +282,16 @@ class DataServiceEnhanced {
    * Carrega métricas do dashboard
    */
   async loadDashboardMetrics(userId) {
-    return await this.getData('metrics', userId, {
-      fallbackToCache: true
-    });
+    try {
+      const response = await apiService.getDashboardMetrics(userId);
+      if (response && response.success) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Erro ao carregar métricas do dashboard:', error);
+      return null;
+    }
   }
   
   /**
@@ -302,27 +309,48 @@ class DataServiceEnhanced {
    * Carrega círculos de atividade
    */
   async loadActivityRings(userId) {
-    return await this.getData('activity_rings', userId, {
-      fallbackToCache: true
-    });
+    try {
+      const response = await apiService.getActivityRings(userId);
+      if (response && response.success) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Erro ao carregar círculos de atividade:', error);
+      return null;
+    }
   }
   
   /**
    * Carrega plano de treino
    */
   async loadWorkoutPlan(userId) {
-    return await this.getData('workout_plan', userId, {
-      fallbackToCache: true
-    });
+    try {
+      const response = await apiService.getWorkoutPlan(userId);
+      if (response && response.success) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Erro ao carregar plano de treino:', error);
+      return null;
+    }
   }
   
   /**
    * Carrega plano nutricional
    */
   async loadNutritionPlan(userId) {
-    return await this.getData('nutrition_plan', userId, {
-      fallbackToCache: true
-    });
+    try {
+      const response = await apiService.getNutritionPlan(userId);
+      if (response && response.success) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Erro ao carregar plano nutricional:', error);
+      return null;
+    }
   }
   
   /**

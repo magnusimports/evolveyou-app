@@ -363,31 +363,8 @@ const AnamneseScreen = ({ onComplete }) => {
     };
   };
 
-  const validateAnswer = async (questionId, answer) => {
-    try {
-      const response = await fetch('/api/v2/anamnese/validate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question_id: questionId,
-          answer: answer
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
-      const data = await response.json();
-      return data.validation || { valid: true };
-    } catch (error) {
-      console.warn('Validação API falhou, usando validação local:', error);
-      // Fallback para validação local
-      return validateAnswerLocally(questionId, answer);
-    }
-  };
+  // Removida função validateAnswer que fazia chamadas API inválidas
+  // Usando apenas validação local
 
   const validateAnswerLocally = (questionId, answer) => {
     const question = questions.find(q => q.id === questionId);
@@ -432,7 +409,7 @@ const AnamneseScreen = ({ onComplete }) => {
   };
 
   const goToNextQuestion = () => {
-    const validation = validateAnswer(currentQuestion, answers[currentQuestion.id]);
+    const validation = validateAnswerLocally(currentQuestion.id, answers[currentQuestion.id]);
     
     if (!validation.valid) {
       setValidationErrors(prev => ({

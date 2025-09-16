@@ -1,5 +1,5 @@
 // Configuração da API
-const API_BASE_URL = 'https://5001-iekzmqs8eukltr2mv2a9d-516fa152.manusvm.computer'
+const API_BASE_URL = 'http://localhost:5000'
 
 class ApiService {
   constructor() {
@@ -284,6 +284,207 @@ class ApiService {
 
   getUserId() {
     return this.userId
+  }
+
+  // ==========================================
+  // DASHBOARD API METHODS
+  // ==========================================
+  
+  async getDashboardMetrics(userId) {
+    try {
+      return await this.request(`/api/dashboard/metrics/${userId}`)
+    } catch (error) {
+      console.warn('Dashboard metrics failed:', error)
+      return null
+    }
+  }
+  
+  async getActivityRings(userId) {
+    try {
+      return await this.request(`/api/dashboard/activity-rings/${userId}`)
+    } catch (error) {
+      console.warn('Activity rings failed:', error)
+      return null
+    }
+  }
+  
+  async getWeeklyProgress(userId) {
+    try {
+      return await this.request(`/api/dashboard/weekly-progress/${userId}`)
+    } catch (error) {
+      console.warn('Weekly progress failed:', error)
+      return null
+    }
+  }
+  
+  async getAchievements(userId) {
+    try {
+      return await this.request(`/api/dashboard/achievements/${userId}`)
+    } catch (error) {
+      console.warn('Achievements failed:', error)
+      return null
+    }
+  }
+  
+  // ==========================================
+  // WORKOUT API METHODS
+  // ==========================================
+  
+  async getWorkoutPlan(userId) {
+    try {
+      return await this.request(`/api/workout/plan/${userId}`)
+    } catch (error) {
+      console.warn('Workout plan failed:', error)
+      return null
+    }
+  }
+  
+  async getWorkoutProgress(userId) {
+    try {
+      return await this.request(`/api/workout/progress/${userId}`)
+    } catch (error) {
+      console.warn('Workout progress failed:', error)
+      return null
+    }
+  }
+  
+  async completeWorkout(userId, workoutId, duration, exercisesCompleted) {
+    try {
+      return await this.request('/api/workout/complete', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: userId,
+          workout_id: workoutId,
+          duration: duration,
+          exercises_completed: exercisesCompleted
+        })
+      })
+    } catch (error) {
+      console.warn('Complete workout failed:', error)
+      return null
+    }
+  }
+  
+  async getExercisesByMuscleGroup(muscleGroup) {
+    try {
+      return await this.request(`/api/workout/exercises/${muscleGroup}`)
+    } catch (error) {
+      console.warn('Exercises by muscle group failed:', error)
+      return null
+    }
+  }
+  
+  // ==========================================
+  // NUTRITION API METHODS
+  // ==========================================
+  
+  async getNutritionPlan(userId) {
+    try {
+      return await this.request(`/api/nutrition/plan/${userId}`)
+    } catch (error) {
+      console.warn('Nutrition plan failed:', error)
+      return null
+    }
+  }
+  
+  async getCurrentIntake(userId) {
+    try {
+      return await this.request(`/api/nutrition/intake/${userId}`)
+    } catch (error) {
+      console.warn('Current intake failed:', error)
+      return null
+    }
+  }
+  
+  async logFood(userId, foodName, quantity, mealType) {
+    try {
+      return await this.request('/api/nutrition/log-food', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: userId,
+          food_name: foodName,
+          quantity: quantity,
+          meal_type: mealType
+        })
+      })
+    } catch (error) {
+      console.warn('Log food failed:', error)
+      return null
+    }
+  }
+  
+  async searchFoods(query) {
+    try {
+      return await this.request(`/api/nutrition/foods/search?q=${encodeURIComponent(query)}`)
+    } catch (error) {
+      console.warn('Search foods failed:', error)
+      return null
+    }
+  }
+  
+  async getWeeklyNutritionProgress(userId) {
+    try {
+      return await this.request(`/api/nutrition/weekly-progress/${userId}`)
+    } catch (error) {
+      console.warn('Weekly nutrition progress failed:', error)
+      return null
+    }
+  }
+
+  // ==========================================
+  // COACH API METHODS
+  // ==========================================
+  
+  async sendChatMessage(userId, message, history = []) {
+    try {
+      return await this.request('/api/coach/chat', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: userId,
+          message: message,
+          history: history
+        })
+      })
+    } catch (error) {
+      console.warn('Send chat message failed:', error)
+      return null
+    }
+  }
+  
+  async getChatHistory(userId) {
+    try {
+      return await this.request(`/api/coach/history/${userId}`)
+    } catch (error) {
+      console.warn('Get chat history failed:', error)
+      return null
+    }
+  }
+  
+  async getChatSuggestions(userId) {
+    try {
+      return await this.request(`/api/coach/suggestions/${userId}`)
+    } catch (error) {
+      console.warn('Get chat suggestions failed:', error)
+      return null
+    }
+  }
+  
+  async getMotivationalQuote() {
+    try {
+      return await this.request('/api/coach/motivational-quote')
+    } catch (error) {
+      console.warn('Get motivational quote failed:', error)
+      return null
+    }
+  }
+  
+  async getQuickTips(category) {
+    try {
+      return await this.request(`/api/coach/quick-tips/${category}`)
+    } catch (error) {
+      console.warn('Get quick tips failed:', error)
+      return null
+    }
   }
 }
 

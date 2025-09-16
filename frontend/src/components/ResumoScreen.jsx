@@ -20,7 +20,7 @@ const ResumoScreen = () => {
       setLoading(true);
       const userId = user.id || 'guest_user';
       
-      // Carregar dados em paralelo
+      // Carregar dados em paralelo das novas APIs
       const [dashboardMetrics, rings] = await Promise.all([
         dataService.loadDashboardMetrics(userId),
         dataService.loadActivityRings(userId)
