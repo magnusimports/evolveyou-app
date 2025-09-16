@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { User, Mail, Lock, Eye, EyeOff, Dumbbell } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, Dumbbell, AlertCircle, CheckCircle } from 'lucide-react';
+import { auth, makeAuthenticatedRequest, API_ENDPOINTS } from '../config/firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
 const AuthScreen = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -11,33 +13,146 @@ const AuthScreen = ({ onLogin }) => {
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleInputChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+    
+    // Limpar erros quando o usuário começar a digitar
+    if (validationErrors[name]) {
+      setValidationErrors({
+        ...validationErrors,
+        [name]: ''
+      });
+    }
+    setError('');
+  };
+
+  // Validação de email
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validação de senha
+  const validatePassword = (password) => {
+    return password.length >= 6;
+  };
+
+  // Validação do formulário
+  const validateForm = () => {
+    const errors = {};
+
+    if (!isLogin && !formData.name.trim()) {
+      errors.name = 'Nome é obrigatório';
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = 'Email é obrigatório';
+    } else if (!validateEmail(formData.email)) {
+      errors.email = 'Email inválido';
+    }
+
+    if (!formData.password) {
+      errors.password = 'Senha é obrigatória';
+    } else if (!validatePassword(formData.password)) {
+      errors.password = 'Senha deve ter pelo menos 6 caracteres';
+    }
+
+    if (!isLogin && formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Senhas não coincidem';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
+    setError('');
+    setSuccess('');
 
     try {
-      // Simular autenticação por enquanto
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      let userCredential;
       
-      // Por enquanto, sempre fazer login com sucesso
+      if (isLogin) {
+        // Login
+        userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        setSuccess('Login realizado com sucesso!');
+      } else {
+        // Cadastro
+        userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        
+        // Criar perfil do usuário no backend
+        try {
+          await makeAuthenticatedRequest(API_ENDPOINTS.createUser, {
+            method: 'POST',
+            body: JSON.stringify({
+              name: formData.name,
+              email: formData.email,
+              uid: userCredential.user.uid
+            })
+          });
+        } catch (apiError) {
+          console.warn('Erro ao criar perfil no backend:', apiError);
+          // Não bloquear o cadastro se a API falhar
+        }
+        
+        setSuccess('Cadastro realizado com sucesso!');
+      }
+
+      // Preparar dados do usuário
       const userData = {
-        id: 'user_' + Date.now(),
-        name: formData.name || 'Ana Silva',
-        email: formData.email || 'ana@exemplo.com',
-        avatar: null
+        uid: userCredential.user.uid,
+        name: formData.name || userCredential.user.displayName || 'Usuário',
+        email: userCredential.user.email,
+        avatar: userCredential.user.photoURL
       };
 
-      onLogin(userData);
+      // Aguardar um pouco para mostrar a mensagem de sucesso
+      setTimeout(() => {
+        onLogin(userData);
+      }, 1000);
+
     } catch (error) {
       console.error('Erro na autenticação:', error);
+      
+      // Tratar erros específicos do Firebase
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          setError('Este email já está em uso');
+          break;
+        case 'auth/weak-password':
+          setError('Senha muito fraca');
+          break;
+        case 'auth/user-not-found':
+          setError('Usuário não encontrado');
+          break;
+        case 'auth/wrong-password':
+          setError('Senha incorreta');
+          break;
+        case 'auth/invalid-email':
+          setError('Email inválido');
+          break;
+        case 'auth/too-many-requests':
+          setError('Muitas tentativas. Tente novamente mais tarde');
+          break;
+        default:
+          setError('Erro na autenticação. Tente novamente');
+      }
     } finally {
       setLoading(false);
     }
@@ -45,12 +160,44 @@ const AuthScreen = ({ onLogin }) => {
 
   const handleGuestLogin = () => {
     const guestUser = {
-      id: 'guest_user',
+      uid: 'guest_user',
       name: 'Usuário Convidado',
       email: 'guest@evolveyou.com',
       avatar: null
     };
     onLogin(guestUser);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      setError('Digite seu email para recuperar a senha');
+      return;
+    }
+
+    if (!validateEmail(formData.email)) {
+      setError('Digite um email válido');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      await sendPasswordResetEmail(auth, formData.email);
+      setSuccess('Email de recuperação enviado! Verifique sua caixa de entrada.');
+      setShowForgotPassword(false);
+    } catch (error) {
+      console.error('Erro ao enviar email de recuperação:', error);
+      switch (error.code) {
+        case 'auth/user-not-found':
+          setError('Email não encontrado');
+          break;
+        default:
+          setError('Erro ao enviar email de recuperação');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -90,6 +237,21 @@ const AuthScreen = ({ onLogin }) => {
             </button>
           </div>
 
+          {/* Mensagens de feedback */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-900/50 border border-red-500 rounded-lg flex items-center">
+              <AlertCircle className="w-5 h-5 text-red-400 mr-2" />
+              <span className="text-red-400 text-sm">{error}</span>
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-4 p-3 bg-green-900/50 border border-green-500 rounded-lg flex items-center">
+              <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
+              <span className="text-green-400 text-sm">{success}</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div className="relative">
@@ -100,9 +262,16 @@ const AuthScreen = ({ onLogin }) => {
                   placeholder="Nome completo"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
+                  className={`w-full pl-10 pr-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-colors ${
+                    validationErrors.name 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-gray-700 focus:border-purple-500'
+                  }`}
                   required={!isLogin}
                 />
+                {validationErrors.name && (
+                  <p className="mt-1 text-red-400 text-xs">{validationErrors.name}</p>
+                )}
               </div>
             )}
 
@@ -114,9 +283,16 @@ const AuthScreen = ({ onLogin }) => {
                 placeholder="E-mail"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
+                className={`w-full pl-10 pr-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-colors ${
+                  validationErrors.email 
+                    ? 'border-red-500 focus:border-red-500' 
+                    : 'border-gray-700 focus:border-purple-500'
+                }`}
                 required
               />
+              {validationErrors.email && (
+                <p className="mt-1 text-red-400 text-xs">{validationErrors.email}</p>
+              )}
             </div>
 
             <div className="relative">
@@ -127,7 +303,11 @@ const AuthScreen = ({ onLogin }) => {
                 placeholder="Senha"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-12 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
+                className={`w-full pl-10 pr-12 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-colors ${
+                  validationErrors.password 
+                    ? 'border-red-500 focus:border-red-500' 
+                    : 'border-gray-700 focus:border-purple-500'
+                }`}
                 required
               />
               <button
@@ -137,6 +317,9 @@ const AuthScreen = ({ onLogin }) => {
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
+              {validationErrors.password && (
+                <p className="mt-1 text-red-400 text-xs">{validationErrors.password}</p>
+              )}
             </div>
 
             {!isLogin && (
@@ -148,9 +331,16 @@ const AuthScreen = ({ onLogin }) => {
                   placeholder="Confirmar senha"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
+                  className={`w-full pl-10 pr-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-colors ${
+                    validationErrors.confirmPassword 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-gray-700 focus:border-purple-500'
+                  }`}
                   required={!isLogin}
                 />
+                {validationErrors.confirmPassword && (
+                  <p className="mt-1 text-red-400 text-xs">{validationErrors.confirmPassword}</p>
+                )}
               </div>
             )}
 
@@ -171,13 +361,44 @@ const AuthScreen = ({ onLogin }) => {
           </form>
 
           {isLogin && (
-            <div className="mt-4 text-center">
+            <div className="mt-4 text-center space-y-2">
+              <button
+                onClick={() => setShowForgotPassword(true)}
+                className="text-purple-400 hover:text-purple-300 text-sm transition-colors block mx-auto"
+              >
+                Esqueceu sua senha?
+              </button>
               <button
                 onClick={handleGuestLogin}
                 className="text-purple-400 hover:text-purple-300 text-sm transition-colors"
               >
                 Continuar como convidado
               </button>
+            </div>
+          )}
+
+          {/* Modal de recuperação de senha */}
+          {showForgotPassword && (
+            <div className="mt-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
+              <h3 className="text-white font-medium mb-2">Recuperar senha</h3>
+              <p className="text-gray-400 text-sm mb-3">
+                Digite seu email para receber as instruções de recuperação
+              </p>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleForgotPassword}
+                  disabled={loading}
+                  className="flex-1 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Enviando...' : 'Enviar'}
+                </button>
+                <button
+                  onClick={() => setShowForgotPassword(false)}
+                  className="px-4 py-2 bg-gray-700 text-gray-300 text-sm rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
             </div>
           )}
 

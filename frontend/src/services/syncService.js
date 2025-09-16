@@ -1,4 +1,6 @@
-// Serviço de Sincronização Avançada - EvolveYou
+import React from 'react';
+
+// Serviço de Sincronização - EvolveYou
 import dataServiceEnhanced from './dataService.js';
 
 class SyncService {
@@ -353,7 +355,7 @@ export const useSyncService = () => {
   const [syncStatus, setSyncStatus] = React.useState(syncService.getSyncStatus());
 
   React.useEffect(() => {
-    const unsubscribe = syncService.addListener((event, data) => {
+    const unsubscribe = syncService.addListener(() => {
       setSyncStatus(syncService.getSyncStatus());
     });
 

@@ -1,13 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useApp, selectors } from '../contexts/AppContext.jsx';
 import dataService from '../services/dataService.js';
-import { motion } from 'framer-motion';
 
 const TreinoScreen = () => {
-  const { state, actions } = useApp();
+  const { state } = useApp();
   const profile = selectors.getProfile(state);
   const user = selectors.getUser(state);
-  const [workoutPlan, setWorkoutPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [currentWeekProgress, setCurrentWeekProgress] = useState({
     completed: 0,
@@ -15,12 +13,7 @@ const TreinoScreen = () => {
     percentage: 0
   });
 
-  useEffect(() => {
-    loadWorkoutData();
-    calculateWeekProgress();
-  }, [profile]);
-
-  const loadWorkoutData = async () => {
+  const loadWorkoutData = useCallback(async () => {
     try {
       setLoading(true);
       const userId = user.id || 'guest_user';
@@ -36,10 +29,10 @@ const TreinoScreen = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const calculateWeekProgress = () => {
-    if (!profile.exercisePreferences) return;
+  const calculateWeekProgress = useCallback(() => {
+    if (!profile) return;
 
     // Calcular progresso baseado no perfil
     const frequency = profile.workout_frequency || 3;
@@ -60,7 +53,12 @@ const TreinoScreen = () => {
       total: frequency,
       percentage: frequency > 0 ? (completed / frequency) * 100 : 0
     });
-  };
+  }, [profile]);
+
+  useEffect(() => {
+    loadWorkoutData();
+    calculateWeekProgress();
+  }, [loadWorkoutData, calculateWeekProgress]);
 
   // Gerar plano de treino baseado no perfil
   const generateWorkoutPlan = () => {

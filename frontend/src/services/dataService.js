@@ -48,9 +48,7 @@ class DataServiceEnhanced {
   async getData(type, identifier, options = {}) {
     const { 
       forceRefresh = false,
-      fallbackToCache = true,
-      priority = 'normal',
-      timeout = 10000
+      fallbackToCache = true
     } = options;
     
     const cacheKey = `${type}:${identifier}`;
@@ -94,9 +92,9 @@ class DataServiceEnhanced {
   }
   
   /**
-   * Executa carregamento de dados com medição de performance
+   * Executar carregamento de dados
    */
-  async performDataLoad(type, identifier, options) {
+  async performDataLoad(type, identifier) {
     const startTime = performance.now();
     const cacheKey = `${type}:${identifier}`;
     

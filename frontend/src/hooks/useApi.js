@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import ApiService from '../services/api'
 
 export const useApi = (endpoint, dependencies = []) => {
@@ -6,49 +6,49 @@ export const useApi = (endpoint, dependencies = []) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        let result
-        switch (endpoint) {
-          case 'profile':
-            result = await ApiService.getProfile()
-            break
-          case 'metrics':
-            result = await ApiService.getMetrics()
-            break
-          case 'activity-rings':
-            result = await ApiService.getActivityRings()
-            break
-          case 'nutrition':
-            result = await ApiService.getNutrition()
-            break
-          case 'workouts':
-            result = await ApiService.getWorkouts()
-            break
-          case 'chart-data':
-            result = await ApiService.getChartData()
-            break
-          default:
-            throw new Error(`Unknown endpoint: ${endpoint}`)
-        }
-        
-        setData(result.data)
-      } catch (err) {
-        setError(err.message)
-        console.error(`Error fetching ${endpoint}:`, err)
-      } finally {
-        setLoading(false)
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      let result
+      switch (endpoint) {
+        case 'profile':
+          result = await ApiService.getProfile()
+          break
+        case 'metrics':
+          result = await ApiService.getMetrics()
+          break
+        case 'activity-rings':
+          result = await ApiService.getActivityRings()
+          break
+        case 'nutrition':
+          result = await ApiService.getNutrition()
+          break
+        case 'workouts':
+          result = await ApiService.getWorkouts()
+          break
+        case 'chart-data':
+          result = await ApiService.getChartData()
+          break
+        default:
+          throw new Error(`Unknown endpoint: ${endpoint}`)
       }
+      
+      setData(result.data)
+    } catch (err) {
+      setError(err.message)
+      console.error(`Error fetching ${endpoint}:`, err)
+    } finally {
+      setLoading(false)
     }
+  }, [endpoint])
 
+  useEffect(() => {
     fetchData()
-  }, dependencies)
+  }, [fetchData, ...dependencies])
 
-  return { data, loading, error, refetch: () => fetchData() }
+  return { data, loading, error, refetch: fetchData }
 }
 
 export const useCoachChat = () => {

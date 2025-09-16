@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, AlertCircle, User, Activity, Heart, Target } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, AlertCircle, User, Activity, Heart, Target, Save } from 'lucide-react';
+import { auth, makeAuthenticatedRequest, API_ENDPOINTS } from '../config/firebase';
 
 const AnamneseScreen = ({ onComplete }) => {
   const [questions, setQuestions] = useState([]);
@@ -9,17 +10,61 @@ const AnamneseScreen = ({ onComplete }) => {
   const [submitting, setSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [categories, setCategories] = useState({});
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [autoSaving, setAutoSaving] = useState(false);
 
   useEffect(() => {
     loadQuestions();
+    loadSavedAnswers();
   }, []);
 
+  // Auto-save das respostas a cada mudança
+  useEffect(() => {
+    if (Object.keys(answers).length > 0) {
+      saveAnswersLocally();
+    }
+  }, [answers]);
+
   const loadQuestions = async () => {
-    // Carregar diretamente as 22 perguntas - sem depender da API
-    console.log('Carregando 22 perguntas diretamente');
-    setQuestions(getFullQuestions());
-    setCategories(getCategories());
-    setLoading(false);
+    try {
+      console.log('Carregando 22 perguntas diretamente');
+      setQuestions(getFullQuestions());
+      setCategories(getCategories());
+    } catch (error) {
+      console.error('Erro ao carregar perguntas:', error);
+      setError('Erro ao carregar questionário');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Carregar respostas salvas localmente
+  const loadSavedAnswers = () => {
+    try {
+      const savedAnswers = localStorage.getItem('evolveyou_anamnese_answers');
+      const savedIndex = localStorage.getItem('evolveyou_anamnese_current_index');
+      
+      if (savedAnswers) {
+        setAnswers(JSON.parse(savedAnswers));
+      }
+      
+      if (savedIndex) {
+        setCurrentQuestionIndex(parseInt(savedIndex));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar respostas salvas:', error);
+    }
+  };
+
+  // Salvar respostas localmente
+  const saveAnswersLocally = () => {
+    try {
+      localStorage.setItem('evolveyou_anamnese_answers', JSON.stringify(answers));
+      localStorage.setItem('evolveyou_anamnese_current_index', currentQuestionIndex.toString());
+    } catch (error) {
+      console.error('Erro ao salvar respostas localmente:', error);
+    }
   };
 
   const getFullQuestions = () => {
@@ -345,7 +390,7 @@ const AnamneseScreen = ({ onComplete }) => {
   };
 
   const validateAnswerLocally = (questionId, answer) => {
-    const question = getQuestions().find(q => q.id === questionId);
+    const question = questions.find(q => q.id === questionId);
     if (!question) return { valid: true };
 
     // Validação básica local
@@ -367,31 +412,39 @@ const AnamneseScreen = ({ onComplete }) => {
     return { valid: true };
   };
 
-  const handleAnswerChange = async (questionId, answer) => {
+  const handleAnswerChange = (questionId, value) => {
     setAnswers(prev => ({
       ...prev,
-      [questionId]: answer
+      [questionId]: value
     }));
+    
+    // Limpar erro de validação se existir
+    if (validationErrors[questionId]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [questionId]: null
+      }));
+    }
 
-    // Validar resposta
-    const validation = await validateAnswer(questionId, answer);
+    // Indicar auto-save
+    setAutoSaving(true);
+    setTimeout(() => setAutoSaving(false), 1000);
+  };
+
+  const goToNextQuestion = () => {
+    const validation = validateAnswer(currentQuestion, answers[currentQuestion.id]);
     
     if (!validation.valid) {
       setValidationErrors(prev => ({
         ...prev,
-        [questionId]: validation.error
+        [currentQuestion.id]: validation.error
       }));
     } else {
       setValidationErrors(prev => {
         const newErrors = { ...prev };
-        delete newErrors[questionId];
+        delete newErrors[currentQuestion.id];
         return newErrors;
       });
-    }
-  };
-
-  const goToNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     }
   };
@@ -404,41 +457,73 @@ const AnamneseScreen = ({ onComplete }) => {
 
   const submitAnamnese = async () => {
     setSubmitting(true);
+    setError('');
+    setSuccess('');
     
     try {
+      // Verificar se usuário está autenticado
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
       // Converter respostas para formato da API
       const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
         question_id: parseInt(questionId),
         answer: answer
       }));
 
-      const response = await fetch('/api/v2/anamnese/submit', {
+      // Preparar dados para envio
+      const anamneseData = {
+        user_id: user.uid,
+        answers: formattedAnswers,
+        completed_at: new Date().toISOString(),
+        questions_count: questions.length
+      };
+
+      console.log('Enviando anamnese para o backend:', anamneseData);
+
+      // Enviar para Cloud Function
+      const response = await makeAuthenticatedRequest(API_ENDPOINTS.completeOnboarding, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-ID': localStorage.getItem('user_id') || 'guest_user'
-        },
-        body: JSON.stringify({
-          answers: formattedAnswers
-        })
+        body: JSON.stringify(anamneseData)
       });
 
-      const data = await response.json();
-      
-      if (data.success) {
-        // Salvar perfil no localStorage
-        localStorage.setItem('user_profile', JSON.stringify(data.profile));
+      console.log('Resposta do backend:', response);
+
+      if (response && response.success) {
+        setSuccess('Anamnese concluída com sucesso!');
         
-        // Chamar callback de conclusão
-        if (onComplete) {
-          onComplete(data);
-        }
+        // Limpar dados salvos localmente
+        localStorage.removeItem('evolveyou_anamnese_answers');
+        localStorage.removeItem('evolveyou_anamnese_current_index');
+        
+        // Aguardar um pouco para mostrar sucesso
+        setTimeout(() => {
+          if (onComplete) {
+            onComplete({
+              success: true,
+              profile: response.profile,
+              answers: formattedAnswers
+            });
+          }
+        }, 1500);
+        
       } else {
-        alert('Erro ao submeter anamnese: ' + data.message);
+        throw new Error(response?.message || 'Erro ao processar anamnese');
       }
+      
     } catch (error) {
       console.error('Erro ao submeter anamnese:', error);
-      alert('Erro ao submeter anamnese');
+      
+      // Tratar diferentes tipos de erro
+      if (error.message.includes('não autenticado')) {
+        setError('Sessão expirada. Faça login novamente.');
+      } else if (error.message.includes('network')) {
+        setError('Erro de conexão. Verifique sua internet.');
+      } else {
+        setError('Erro ao processar anamnese. Tente novamente.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -660,6 +745,28 @@ const AnamneseScreen = ({ onComplete }) => {
 
       {/* Question Content */}
       <div className="max-w-2xl mx-auto p-6">
+        {/* Mensagens de feedback */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg flex items-center">
+            <AlertCircle className="w-5 h-5 text-red-400 mr-3" />
+            <span className="text-red-400">{error}</span>
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-6 p-4 bg-green-900/50 border border-green-500 rounded-lg flex items-center">
+            <CheckCircle className="w-5 h-5 text-green-400 mr-3" />
+            <span className="text-green-400">{success}</span>
+          </div>
+        )}
+
+        {/* Auto-save indicator */}
+        {autoSaving && (
+          <div className="mb-4 flex items-center text-blue-400 text-sm">
+            <Save className="w-4 h-4 mr-2 animate-pulse" />
+            Salvando automaticamente...
+          </div>
+        )}
         {/* Category Badge */}
         <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-800 mb-6 ${getCategoryColor(currentQuestion.category)}`}>
           {getCategoryIcon(currentQuestion.category)}

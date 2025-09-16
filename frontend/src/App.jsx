@@ -9,6 +9,8 @@ import ResumoScreen from './components/ResumoScreen.jsx';
 import NutricaoScreen from './components/NutricaoScreen.jsx';
 import TreinoScreen from './components/TreinoScreen.jsx';
 import CoachScreen from './components/CoachScreen.jsx';
+import { auth } from './config/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import './App.css';
 
 // Componente principal da aplicação
@@ -22,52 +24,65 @@ function AppContent() {
   // Inicialização da aplicação
   useEffect(() => {
     initializeApp();
+    setupAuthListener();
   }, []);
+
+  // Configurar listener de autenticação Firebase
+  const setupAuthListener = () => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Usuário logado
+        const userData = {
+          uid: user.uid,
+          name: user.displayName || 'Usuário',
+          email: user.email,
+          avatar: user.photoURL
+        };
+        
+        console.log('Usuário autenticado:', userData);
+        actions.loginUser(userData);
+        
+        // Verificar se precisa fazer anamnese
+        checkAnamneseStatus();
+      } else {
+        // Usuário não logado
+        console.log('Usuário não autenticado');
+        actions.logoutUser();
+      }
+    });
+
+    // Cleanup function
+    return () => unsubscribe();
+  };
+
+  const checkAnamneseStatus = async () => {
+    try {
+      // Verificar se há dados de anamnese salvos
+      const profile = dataService.getFromLocalStorage('user_profile');
+      
+      if (profile && profile.anamnese_completed) {
+        actions.updateProfile(profile);
+        actions.setCurrentScreen('dashboard');
+        await loadDashboardData();
+      } else {
+        actions.setCurrentScreen('anamnese');
+      }
+    } catch (error) {
+      console.error('Erro ao verificar status da anamnese:', error);
+      actions.setCurrentScreen('anamnese');
+    }
+  };
 
   const initializeApp = async () => {
     try {
       actions.setLoading(true);
       
-      // Verificar se há dados salvos
-      const savedProfile = dataService.getFromLocalStorage('user_profile');
-      const savedUser = dataService.getFromLocalStorage('evolveyou_user');
-      
-      if (savedUser) {
-        actions.loginUser(savedUser);
-      }
-      
-      if (savedProfile) {
-        actions.updateProfile(savedProfile);
-        
-        if (savedProfile.anamnese_completed) {
-          actions.completeAnamnese({
-            profile: savedProfile,
-            score: savedProfile?.anamnese_score || {},
-            recommendations: savedProfile?.recommendations || {},
-            prescriptions: {
-              workout: savedProfile?.workout_plan,
-              nutrition: savedProfile?.nutrition_plan,
-              hydration: savedProfile?.hydration_plan
-            }
-          });
-        }
-      }
-      
-      // Determinar tela inicial
-      if (savedUser) {
-        if (savedProfile?.anamnese_completed) {
-          actions.setCurrentScreen('dashboard');
-          await loadDashboardData();
-        } else {
-          actions.setCurrentScreen('anamnese');
-        }
-      } else {
-        actions.setCurrentScreen('auth');
-      }
+      // A autenticação será gerenciada pelo onAuthStateChanged
+      console.log('Inicializando aplicação...');
       
     } catch (error) {
       console.error('Erro na inicialização:', error);
-      actions.setError('Erro ao inicializar aplicativo');
+      actions.setError('Erro ao inicializar aplicação');
     } finally {
       actions.setLoading(false);
     }
@@ -99,21 +114,10 @@ function AppContent() {
   const handleLogin = async (userData) => {
     try {
       actions.setLoading(true);
-      actions.loginUser(userData);
       
-      // Salvar no localStorage
-      dataService.saveToLocalStorage('evolveyou_user', userData);
-      
-      // Verificar se precisa fazer anamnese
-      const profile = dataService.getFromLocalStorage('user_profile');
-      
-      if (profile && profile.anamnese_completed) {
-        actions.updateProfile(profile);
-        actions.setCurrentScreen('dashboard');
-        await loadDashboardData();
-      } else {
-        actions.setCurrentScreen('anamnese');
-      }
+      console.log('Login realizado via Firebase:', userData);
+      // A autenticação já foi processada pelo onAuthStateChanged
+      // Apenas aguardar o processamento
       
     } catch (error) {
       console.error('Erro no login:', error);
@@ -127,44 +131,52 @@ function AppContent() {
     try {
       actions.setLoading(true);
       
-      // Submeter anamnese e obter perfil
-      const result = await dataService.submitAnamnese(anamneseData.answers);
+      console.log('Anamnese concluída:', anamneseData);
       
-      if (result.success && result.profile) {
-        // Calcular dados derivados
-        const enhancedProfile = dataService.calculateDerivedData(result.profile);
+      if (anamneseData.success && anamneseData.profile) {
+        // Salvar perfil localmente
+        dataService.saveToLocalStorage('user_profile', anamneseData.profile);
         
-        // Atualizar estado global
+        // Atualizar estado da aplicação
+        actions.updateProfile(anamneseData.profile);
         actions.completeAnamnese({
-          profile: enhancedProfile,
-          score: enhancedProfile.anamnese_score || {},
-          recommendations: enhancedProfile.recommendations || {},
-          prescriptions: {
-            workout: enhancedProfile.workout_plan,
-            nutrition: enhancedProfile.nutrition_plan,
-            hydration: enhancedProfile.hydration_plan
-          }
+          profile: anamneseData.profile,
+          answers: anamneseData.answers
         });
         
-        // Carregar dados do dashboard
+        // Navegar para dashboard
+        actions.setCurrentScreen('dashboard');
         await loadDashboardData();
         
-        actions.setCurrentScreen('dashboard');
       } else {
-        throw new Error(result.message || 'Erro ao processar anamnese');
+        throw new Error('Dados da anamnese inválidos');
       }
       
     } catch (error) {
-      console.error('Erro ao completar anamnese:', error);
-      actions.setError('Erro ao processar anamnese. Tente novamente.');
+      console.error('Erro ao processar anamnese:', error);
+      actions.setError('Erro ao processar anamnese');
     } finally {
       actions.setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    dataService.clearAllData();
-    actions.logoutUser();
+  const handleLogout = async () => {
+    try {
+      // Fazer logout do Firebase
+      await auth.signOut();
+      
+      // Limpar dados locais
+      dataService.clearAllData();
+      localStorage.removeItem('evolveyou_anamnese_answers');
+      localStorage.removeItem('evolveyou_anamnese_current_index');
+      
+      // O onAuthStateChanged vai processar o logout automaticamente
+      console.log('Logout realizado');
+      
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      actions.setError('Erro ao fazer logout');
+    }
   };
 
   // Renderizar tela de loading

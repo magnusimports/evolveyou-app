@@ -1,4 +1,6 @@
-// Serviço de Performance e Otimização - EvolveYou
+// Serviço de Performance - EvolveYou
+import React from 'react';
+
 class PerformanceService {
   constructor() {
     this.metrics = {
@@ -186,7 +188,6 @@ class PerformanceService {
         
         return result;
       } catch (error) {
-        const endTime = performance.now();
         this.logError(`Erro na função: ${name}`, error);
         throw error;
       }
