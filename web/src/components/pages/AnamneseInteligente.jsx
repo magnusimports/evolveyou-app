@@ -401,9 +401,11 @@ const AnamneseInteligente = () => {
           },
           body: JSON.stringify({
             userId: userData.id,
-            anamnese: answers,
-            imc: userData.imc,
-            timestamp: userData.created_at
+            dadosAnamnese: {
+              ...answers,
+              imc: userData.imc,
+              timestamp: userData.created_at
+            }
           })
         })
         
