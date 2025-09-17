@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/config/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -482,26 +483,26 @@ const DashboardHoje = () => {
       {/* Barra de Navegação Inferior */}
       <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-gray-800 border-t border-gray-700">
         <div className="flex justify-around">
-          <a href="#" className="flex flex-col items-center justify-center p-3 text-green-400 w-1/5">
+          <Link to="/dashboard" className="flex flex-col items-center justify-center p-3 text-green-400 w-1/5">
             <Home className="w-6 h-6" />
             <span className="text-xs">Hoje</span>
-          </a>
-          <a href="#" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5">
+          </Link>
+          <Link to="/dieta" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5">
             <Utensils className="w-6 h-6" />
             <span className="text-xs">Dieta</span>
-          </a>
-          <a href="#" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5">
+          </Link>
+          <Link to="/treino" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5">
             <Dumbbell className="w-6 h-6" />
             <span className="text-xs">Treino</span>
-          </a>
-          <a href="#" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5">
+          </Link>
+          <Link to="/plano" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5">
             <Calendar className="w-6 h-6" />
             <span className="text-xs">Plano</span>
-          </a>
-          <a href="#" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5">
+          </Link>
+          <Link to="/progresso" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5">
             <TrendingUp className="w-6 h-6" />
             <span className="text-xs">Progresso</span>
-          </a>
+          </Link>
         </div>
       </nav>
     </div>

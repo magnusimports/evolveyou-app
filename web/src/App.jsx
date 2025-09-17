@@ -1,3 +1,4 @@
+import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/hooks/useAuth.jsx'
 import ProtectedRoute from '@/components/ProtectedRoute'
@@ -8,6 +9,8 @@ import DashboardManus from '@/components/pages/DashboardManus'
 import DashboardHoje from '@/components/pages/DashboardHoje'
 import PlanoAlimentar from '@/components/pages/PlanoAlimentar'
 import TreinoDoDia from '@/components/pages/TreinoDoDia'
+import PlanoSemanal from '@/components/pages/PlanoSemanal'
+import Progresso from '@/components/pages/Progresso'
 import Login from '@/components/pages/Login'
 import Register from '@/components/pages/Register'
 import Nutrition from '@/components/pages/Nutrition'
@@ -111,6 +114,22 @@ function AppContent() {
             element={
               <ProtectedRoute requiresAnamnese={true}>
                 <TreinoDoDia />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/plano" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <PlanoSemanal />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/progresso" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <Progresso />
               </ProtectedRoute>
             } 
           />

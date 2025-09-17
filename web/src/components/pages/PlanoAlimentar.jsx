@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/config/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
@@ -434,26 +435,26 @@ const PlanoAlimentar = () => {
       {/* Barra de Navegação Inferior */}
       <nav className="fixed bottom-0 left-0 right-0 max-w-md lg:max-w-4xl mx-auto bg-gray-800 border-t border-gray-700">
         <div className="flex justify-around">
-          <a href="/dashboard" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
+          <Link to="/dashboard" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
             <Home className="w-6 h-6" />
             <span className="text-xs">Hoje</span>
-          </a>
-          <a href="/dieta" className="flex flex-col items-center justify-center p-3 text-green-400 w-1/5">
+          </Link>
+          <Link to="/dieta" className="flex flex-col items-center justify-center p-3 text-green-400 w-1/5">
             <Utensils className="w-6 h-6" />
             <span className="text-xs">Dieta</span>
-          </a>
-          <a href="/treino" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
+          </Link>
+          <Link to="/treino" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
             <Dumbbell className="w-6 h-6" />
             <span className="text-xs">Treino</span>
-          </a>
-          <a href="/plano" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
+          </Link>
+          <Link to="/plano" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
             <Calendar className="w-6 h-6" />
             <span className="text-xs">Plano</span>
-          </a>
-          <a href="/progresso" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
+          </Link>
+          <Link to="/progresso" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
             <TrendingUp className="w-6 h-6" />
             <span className="text-xs">Progresso</span>
-          </a>
+          </Link>
         </div>
       </nav>
     </div>
