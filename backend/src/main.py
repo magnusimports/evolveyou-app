@@ -10,7 +10,11 @@ from flask_cors import CORS
 # from src.routes.user import user_bp
 from src.routes.fitness import fitness_bp
 from src.routes.advanced_api import advanced_api
-from src.routes.anamnese_api_fixed import anamnese_api
+# from src.routes.anamnese_api_fixed import anamnese_api
+from src.routes.anamnese_api_v2 import anamnese_api_v2
+from src.routes.alimentos_api import alimentos_bp
+from src.routes.exercicios_api import exercicios_bp
+from src.routes.coach_api import coach_bp
 # Comentando Firebase para deploy
 # from src.routes.fitness_firebase import fitness_firebase_bp
 
@@ -24,7 +28,11 @@ CORS(app)
 # app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(fitness_bp, url_prefix='/api/fitness')
 app.register_blueprint(advanced_api)
-app.register_blueprint(anamnese_api)
+# app.register_blueprint(anamnese_api)
+app.register_blueprint(anamnese_api_v2)
+app.register_blueprint(alimentos_bp, url_prefix='/api/alimentos')
+app.register_blueprint(exercicios_bp, url_prefix='/api/exercicios')
+app.register_blueprint(coach_bp, url_prefix='/api/coach')
 # Comentando Firebase para deploy
 # app.register_blueprint(fitness_firebase_bp, url_prefix='/api/firebase')
 
@@ -53,4 +61,6 @@ def serve(path):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') != 'production'
+    app.run(host='0.0.0.0', port=port, debug=debug)

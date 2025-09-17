@@ -18,8 +18,10 @@ import Profile from '@/components/pages/Profile'
 import ProgressDashboard from '@/components/pages/ProgressDashboard'
 import MealRegistration from '@/components/pages/MealRegistration'
 import Onboarding from '@/components/pages/Onboarding'
+import AnamneseInteligente from '@/components/pages/AnamneseInteligente'
 import PlanPresentation from '@/components/pages/PlanPresentation'
 import ApiTest from '@/components/pages/ApiTest'
+import TestAPI from '@/components/TestAPI'
 import EnhancedBMRCalculator from '@/components/EnhancedBMRCalculator'
 import './App.css'
 
@@ -64,8 +66,10 @@ function AppContent() {
           <Route path="/meals" element={<MealRegistration />} />
           <Route path="/meal-registration" element={<MealRegistration />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/anamnese" element={<AnamneseInteligente />} />
           <Route path="/plan-presentation" element={<PlanPresentation />} />
           <Route path="/api-test" element={<ApiTest />} />
+          <Route path="/test-api" element={<TestAPI />} />
           <Route path="/workout-player" element={<WorkoutPlayer />} />
           <Route path="/progress" element={<ProgressDashboard />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

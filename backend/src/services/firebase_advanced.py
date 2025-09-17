@@ -23,22 +23,12 @@ class FirebaseAdvanced:
     def initialize_firebase(self):
         """Inicializa Firebase com configuração de produção"""
         try:
-            # Configuração para produção do EvolveYou
-            firebase_config = {
-                "type": "service_account",
-                "project_id": "evolveyou-prod",
-                "private_key_id": "firebase_key_id",
-                "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC...\n-----END PRIVATE KEY-----\n",
-                "client_email": "firebase-adminsdk@evolveyou-prod.iam.gserviceaccount.com",
-                "client_id": "firebase_client_id",
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs"
-            }
+            # Caminho para o arquivo de configuração
+            config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'firebase-config.json')
             
             # Inicializar Firebase Admin
             if not firebase_admin._apps:
-                cred = credentials.Certificate(firebase_config)
+                cred = credentials.Certificate(config_path)
                 self.app = firebase_admin.initialize_app(cred)
             else:
                 self.app = firebase_admin.get_app()

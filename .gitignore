@@ -1,2 +1,38 @@
+# Dependencies
+node_modules/
+web/node_modules/
 backend/venv/
-frontend/node_modules/
+backend/__pycache__/
+backend/src/**/__pycache__/
+
+# Build outputs
+web/dist/
+backend/build/
+
+# Logs
+*.log
+backend/*.log
+web/*.log
+
+# Environment files
+.env
+.env.local
+.env.production.local
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
