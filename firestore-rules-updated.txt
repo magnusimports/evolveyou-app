@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Regras que permitem leitura/escrita se o usuário estiver autenticado
+    // Isso é fundamental para o acesso direto do app Flutter via Firebase SDK
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // NOVAS REGRAS PARA EVOLVEYOU APP
+    
+    // Anamneses - usuários podem ler/escrever apenas suas próprias anamneses
+    match /anamneses/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Planos Alimentares - usuários podem ler/escrever apenas seus próprios planos
+    match /planosAlimentares/{document=**} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Check-ins de Refeições - usuários podem ler/escrever apenas seus próprios check-ins
+    match /checkinsRefeicoes/{document=**} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Treinos do Dia - usuários podem ler/escrever apenas seus próprios treinos
+    match /treinosDoDia/{document=**} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Sessões de Treino - usuários podem ler/escrever apenas suas próprias sessões
+    match /sessoesTreino/{document=**} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Registros de Peso - usuários podem ler/escrever apenas seus próprios registros
+    match /registrosPeso/{document=**} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Logs de Atividade - usuários podem ler/escrever apenas seus próprios logs
+    match /logsAtividade/{document=**} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Regras para suas coleções que seus microsserviços acessarão
+    // Seus microsserviços acessam o Firestore com credenciais de serviço
+    // e não precisam de regras 'allow read, write' abertas.
+    // No entanto, para facilitar o desenvolvimento inicial (e COM CUIDADO),
+    // podemos adicionar regras mais permissivas para coleções específicas.
+
+    // Exemplo: Permitir que apenas usuários autenticados acessem a coleção 'plans'
+    match /plans/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Exemplo: Permitir que apenas usuários autenticados acessem a coleção 'daily_logs'
+    match /daily_logs/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Para coleções como 'foods' e 'exercises' que são conteúdo estático
+    // e apenas lidas pelo app, você pode configurar apenas 'read'.
+    match /foods/{document=**} {
+      allow read: if true; // Leitura pública, escrita apenas por admin
+      allow write: if false; // Apenas o Content Service via service account deve escrever
+    }
+    
+    match /exercises/{document=**} {
+      allow read: if true; // Leitura pública, escrita apenas por admin
+      allow write: if false; // Apenas o Content Service via service account deve escrever
+    }
+    
+    // Coleções de dados estáticos do EvolveYou
+    match /evolveyou-foods/{document=**} {
+      allow read: if true; // Leitura pública para todos
+      allow write: if false; // Escrita apenas via Cloud Functions
+    }
+    
+    match /exercicios/{document=**} {
+      allow read: if true; // Leitura pública para todos
+      allow write: if false; // Escrita apenas via Cloud Functions
+    }
+    
+    match /food_groups/{document=**} {
+      allow read: if true; // Leitura pública para todos
+      allow write: if false; // Escrita apenas via Cloud Functions
+    }
+    
+    // Logs de autenticação - apenas leitura para usuários autenticados
+    match /auth_logs/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false; // Escrita apenas via Cloud Functions
+    }
+    
+    // Health checks - apenas leitura para usuários autenticados
+    match /health_check/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false; // Escrita apenas via Cloud Functions
+    }
+    
+    match /health_checks/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false; // Escrita apenas via Cloud Functions
+    }
+    
+    // Refresh tokens - usuários podem ler/escrever apenas seus próprios tokens
+    match /refresh_tokens/{document=**} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+  }
+}
+

@@ -88,7 +88,14 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       setError(null);
+      
+      // Limpar todos os dados do localStorage
       localStorage.removeItem('demo_user');
+      localStorage.removeItem('anamnese_completa');
+      localStorage.removeItem('dados_anamnese');
+      localStorage.removeItem('usuario_anamnese');
+      localStorage.removeItem('evolveyou_user_data');
+      
       setUser(null);
       await signOut(auth);
     } catch (error) {
