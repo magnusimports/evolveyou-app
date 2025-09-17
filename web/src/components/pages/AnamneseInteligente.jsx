@@ -392,7 +392,31 @@ const AnamneseInteligente = () => {
         status: 'completed'
       }
       
-      // Salvar no localStorage com as chaves corretas
+      // Salvar no Firestore usando Firebase Function
+      try {
+        const response = await fetch('https://us-central1-evolveyou-prod.cloudfunctions.net/salvarAnamnese', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: userData.id,
+            anamnese: answers,
+            imc: userData.imc,
+            timestamp: userData.created_at
+          })
+        })
+        
+        if (response.ok) {
+          console.log('✅ Anamnese salva no Firestore com sucesso!')
+        } else {
+          console.warn('⚠️ Erro ao salvar no Firestore, mas continuando com localStorage')
+        }
+      } catch (firestoreError) {
+        console.warn('⚠️ Erro na conexão com Firestore:', firestoreError)
+      }
+      
+      // Salvar no localStorage como backup
       localStorage.setItem('dados_anamnese', JSON.stringify(answers))
       localStorage.setItem('anamnese_completa', 'true')
       localStorage.setItem('evolveyou_user_data', JSON.stringify(userData))
