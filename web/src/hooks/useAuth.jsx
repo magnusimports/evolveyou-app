@@ -72,9 +72,11 @@ export function AuthProvider({ children }) {
         uid: 'demo-user-123',
         email: 'demo@evolveyou.com',
         displayName: 'Usuário Demo',
-        photoURL: null
+        photoURL: null,
+        isDemo: true
       };
       setUser(demoUser);
+      localStorage.setItem('demo_user', JSON.stringify(demoUser));
       return demoUser;
     } catch (error) {
       setError(error.message);
@@ -86,6 +88,8 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       setError(null);
+      localStorage.removeItem('demo_user');
+      setUser(null);
       await signOut(auth);
     } catch (error) {
       setError(error.message);
@@ -95,8 +99,19 @@ export function AuthProvider({ children }) {
 
   // Listen for auth state changes
   useEffect(() => {
+    // Verificar se há usuário demo salvo
+    const demoUser = localStorage.getItem('demo_user');
+    if (demoUser) {
+      setUser(JSON.parse(demoUser));
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+      // Só atualizar se não há usuário demo
+      if (!localStorage.getItem('demo_user')) {
+        setUser(user);
+      }
       setLoading(false);
     });
 

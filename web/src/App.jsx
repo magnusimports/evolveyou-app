@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/hooks/useAuth.jsx'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import Navbar from '@/components/layout/Navbar'
 import DashboardSimple from '@/components/pages/DashboardSimple'
 import DashboardAdvanced from '@/components/pages/DashboardAdvanced'
@@ -57,21 +58,133 @@ function AppContent() {
       <div className="min-h-screen">
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<DashboardManus />} />
-          <Route path="/nutrition" element={<NutritionManus />} />
-          <Route path="/workout" element={<WorkoutManus />} />
-          <Route path="/coach" element={<CoachEVOManus />} />
-          <Route path="/enhanced-bmr" element={<EnhancedBMRCalculator />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/meals" element={<MealRegistration />} />
-          <Route path="/meal-registration" element={<MealRegistration />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/anamnese" element={<AnamneseInteligente />} />
-          <Route path="/plan-presentation" element={<PlanPresentation />} />
-          <Route path="/api-test" element={<ApiTest />} />
-          <Route path="/test-api" element={<TestAPI />} />
-          <Route path="/workout-player" element={<WorkoutPlayer />} />
-          <Route path="/progress" element={<ProgressDashboard />} />
+          
+          {/* Rota da anamnese - não requer anamnese completa */}
+          <Route 
+            path="/anamnese" 
+            element={
+              <ProtectedRoute requiresAnamnese={false}>
+                <AnamneseInteligente />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Rotas que requerem anamnese completa */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <DashboardManus />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/nutrition" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <NutritionManus />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/workout" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <WorkoutManus />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/coach" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <CoachEVOManus />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/meals" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <MealRegistration />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/meal-registration" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <MealRegistration />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/progress" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <ProgressDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/workout-player" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <WorkoutPlayer />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Rotas que não requerem anamnese */}
+          <Route 
+            path="/enhanced-bmr" 
+            element={
+              <ProtectedRoute requiresAnamnese={false}>
+                <EnhancedBMRCalculator />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/onboarding" 
+            element={
+              <ProtectedRoute requiresAnamnese={false}>
+                <Onboarding />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/plan-presentation" 
+            element={
+              <ProtectedRoute requiresAnamnese={false}>
+                <PlanPresentation />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/api-test" 
+            element={
+              <ProtectedRoute requiresAnamnese={false}>
+                <ApiTest />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/test-api" 
+            element={
+              <ProtectedRoute requiresAnamnese={false}>
+                <TestAPI />
+              </ProtectedRoute>
+            } 
+          />
+          
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>

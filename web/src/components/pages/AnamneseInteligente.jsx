@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,9 +27,36 @@ import {
 
 const AnamneseInteligente = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [currentStep, setCurrentStep] = useState(0)
   const [answers, setAnswers] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Limpar dados antigos quando um novo usuário acessa
+  useEffect(() => {
+    if (user) {
+      // Verificar se é um novo usuário ou se os dados são de outro usuário
+      const dadosExistentes = localStorage.getItem('dados_anamnese');
+      const usuarioAnterior = localStorage.getItem('usuario_anamnese');
+      
+      if (!dadosExistentes || usuarioAnterior !== user.uid) {
+        // Limpar dados antigos
+        localStorage.removeItem('anamnese_completa');
+        localStorage.removeItem('dados_anamnese');
+        localStorage.removeItem('usuario_anamnese');
+        setAnswers({});
+      } else {
+        // Carregar dados existentes do mesmo usuário
+        try {
+          const dados = JSON.parse(dadosExistentes);
+          setAnswers(dados);
+        } catch (error) {
+          console.error('Erro ao carregar dados da anamnese:', error);
+          setAnswers({});
+        }
+      }
+    }
+  }, [user]);
 
   const questions = [
     {
@@ -357,16 +385,20 @@ const AnamneseInteligente = () => {
       
       // Preparar dados do usuário
       const userData = {
-        id: `user_${Date.now()}`,
+        id: user?.uid || `user_${Date.now()}`,
         anamnese: answers,
         imc: imc.toFixed(2),
         created_at: new Date().toISOString(),
         status: 'completed'
       }
       
-      // Salvar no localStorage
+      // Salvar no localStorage com as chaves corretas
+      localStorage.setItem('dados_anamnese', JSON.stringify(answers))
+      localStorage.setItem('anamnese_completa', 'true')
       localStorage.setItem('evolveyou_user_data', JSON.stringify(userData))
-      localStorage.setItem('evolveyou_anamnese_completed', 'true')
+      if (user) {
+        localStorage.setItem('usuario_anamnese', user.uid)
+      }
       
       // Simular delay de processamento
       await new Promise(resolve => setTimeout(resolve, 2000))
