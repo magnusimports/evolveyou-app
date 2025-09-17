@@ -17,6 +17,8 @@ import 'screens/progress_screen.dart';
 import 'screens/nutrition_screen.dart';
 import 'screens/workout_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/anamnese_screen.dart';
+import 'screens/fulltime_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,6 +79,8 @@ class EvolveYouApp extends StatelessWidget {
           '/nutrition': (context) => const NutritionScreen(),
           '/workout': (context) => const WorkoutScreen(),
           '/profile': (context) => const ProfileScreen(),
+          '/anamnese': (context) => const AnamneseScreen(),
+          '/fulltime': (context) => const FulltimeScreen(),
         },
         
         // Configurações de navegação

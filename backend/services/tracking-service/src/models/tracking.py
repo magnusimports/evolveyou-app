@@ -262,3 +262,79 @@ class ProgressSummaryResponse(BaseModel):
     summary_metrics: List[ProgressMetric] = Field(default=[], description="Métricas resumo")
     generated_at: datetime = Field(default_factory=datetime.utcnow, description="Data de geração")
 
+
+# Modelos específicos para Sistema Full-time
+
+class UserProfile(BaseModel):
+    """Perfil do usuário para cálculos"""
+    user_id: str = Field(..., description="ID do usuário")
+    daily_calorie_target: int = Field(..., description="Meta diária de calorias")
+    weight: float = Field(..., description="Peso em kg")
+    height: int = Field(..., description="Altura em cm")
+    age: int = Field(..., description="Idade em anos")
+    activity_level: str = Field(..., description="Nível de atividade")
+    goals: List[str] = Field(default=[], description="Objetivos do usuário")
+
+
+class ActivityRecord(BaseModel):
+    """Registro de atividade extra"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="ID único")
+    user_id: str = Field(..., description="ID do usuário")
+    activity_type: str = Field(..., description="Tipo de atividade")
+    duration_minutes: int = Field(..., gt=0, description="Duração em minutos")
+    intensity: str = Field(..., description="Intensidade (low, moderate, high)")
+    calories_burned: int = Field(..., ge=0, description="Calorias queimadas")
+    description: str = Field(..., description="Descrição da atividade")
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Timestamp da atividade")
+
+
+class CalorieRebalance(BaseModel):
+    """Rebalanceamento de calorias"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="ID único")
+    user_id: str = Field(..., description="ID do usuário")
+    original_calories: int = Field(..., description="Calorias originais")
+    extra_calories_burned: int = Field(..., ge=0, description="Calorias extras queimadas")
+    new_calorie_target: int = Field(..., description="Nova meta de calorias")
+    rebalance_factor: float = Field(..., ge=0, le=1, description="Fator de rebalanceamento")
+    reason: str = Field(..., description="Motivo do rebalanceamento")
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Timestamp do rebalanceamento")
+
+
+class FulltimeStatus(BaseModel):
+    """Status do Sistema Full-time"""
+    user_id: str = Field(..., description="ID do usuário")
+    is_active: bool = Field(..., description="Sistema ativo")
+    daily_extra_calories: int = Field(default=0, description="Calorias extras do dia")
+    total_rebalances_today: int = Field(default=0, description="Total de rebalanceamentos hoje")
+    last_rebalance: Optional[datetime] = Field(default=None, description="Último rebalanceamento")
+    daily_calorie_target: int = Field(default=0, description="Meta diária de calorias")
+    current_calorie_target: int = Field(default=0, description="Meta atual de calorias")
+
+
+class ActivityTypeInfo(BaseModel):
+    """Informações sobre tipo de atividade"""
+    name: str = Field(..., description="Nome da atividade")
+    calories_per_minute: Dict[str, float] = Field(..., description="Calorias por minuto por intensidade")
+    description: str = Field(..., description="Descrição da atividade")
+    category: str = Field(..., description="Categoria da atividade")
+
+
+class FulltimeDashboard(BaseModel):
+    """Dashboard do Sistema Full-time"""
+    status: FulltimeStatus = Field(..., description="Status atual")
+    today: Dict[str, Any] = Field(..., description="Dados de hoje")
+    week: Dict[str, Any] = Field(..., description="Dados da semana")
+    recent_activities: List[Dict[str, Any]] = Field(default=[], description="Atividades recentes")
+    recent_rebalances: List[Dict[str, Any]] = Field(default=[], description="Rebalanceamentos recentes")
+
+
+class RebalanceResult(BaseModel):
+    """Resultado de rebalanceamento"""
+    success: bool = Field(..., description="Sucesso do rebalanceamento")
+    original_calories: int = Field(..., description="Calorias originais")
+    extra_calories_burned: int = Field(..., description="Calorias extras queimadas")
+    new_calorie_target: int = Field(..., description="Nova meta de calorias")
+    rebalance_factor: float = Field(..., description="Fator de rebalanceamento")
+    reason: str = Field(..., description="Motivo do rebalanceamento")
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Timestamp do resultado")
+
