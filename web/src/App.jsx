@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar'
 import DashboardSimple from '@/components/pages/DashboardSimple'
 import DashboardAdvanced from '@/components/pages/DashboardAdvanced'
 import DashboardManus from '@/components/pages/DashboardManus'
+import DashboardHoje from '@/components/pages/DashboardHoje'
 import Login from '@/components/pages/Login'
 import Register from '@/components/pages/Register'
 import Nutrition from '@/components/pages/Nutrition'
@@ -75,7 +76,7 @@ function AppContent() {
             path="/dashboard" 
             element={
               <ProtectedRoute requiresAnamnese={true}>
-                <DashboardPersonalizado />
+                <DashboardHoje />
               </ProtectedRoute>
             } 
           />
