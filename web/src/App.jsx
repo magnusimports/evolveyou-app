@@ -6,6 +6,8 @@ import DashboardSimple from '@/components/pages/DashboardSimple'
 import DashboardAdvanced from '@/components/pages/DashboardAdvanced'
 import DashboardManus from '@/components/pages/DashboardManus'
 import DashboardHoje from '@/components/pages/DashboardHoje'
+import PlanoAlimentar from '@/components/pages/PlanoAlimentar'
+import TreinoDoDia from '@/components/pages/TreinoDoDia'
 import Login from '@/components/pages/Login'
 import Register from '@/components/pages/Register'
 import Nutrition from '@/components/pages/Nutrition'
@@ -84,7 +86,15 @@ function AppContent() {
             path="/nutrition" 
             element={
               <ProtectedRoute requiresAnamnese={true}>
-                <NutritionManus />
+                <PlanoAlimentar />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/dieta" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <PlanoAlimentar />
               </ProtectedRoute>
             } 
           />
@@ -92,7 +102,15 @@ function AppContent() {
             path="/workout" 
             element={
               <ProtectedRoute requiresAnamnese={true}>
-                <WorkoutManus />
+                <TreinoDoDia />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/treino" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <TreinoDoDia />
               </ProtectedRoute>
             } 
           />
