@@ -315,3 +315,52 @@ exports.salvarAnamnese = functions.https.onRequest((req, res) => {
   });
 });
 
+
+/**
+ * API para buscar dados da anamnese de um usuário
+ */
+exports.getAnamnese = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    try {
+      const userId = req.query.userId || req.body.userId;
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          error: "UserId é obrigatório",
+        });
+      }
+
+      // Buscar anamnese na coleção 'anamneses'
+      const anamneseDoc = await admin.firestore()
+          .collection("anamneses")
+          .doc(userId)
+          .get();
+
+      if (!anamneseDoc.exists) {
+        return res.status(404).json({
+          success: false,
+          error: "Anamnese não encontrada",
+          userId: userId,
+        });
+      }
+
+      const anamneseData = anamneseDoc.data();
+
+      res.json({
+        success: true,
+        data: anamneseData,
+        userId: userId,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Erro ao buscar anamnese:", error);
+      res.status(500).json({
+        success: false,
+        error: "Erro interno do servidor",
+        details: error.message,
+      });
+    }
+  });
+});
+

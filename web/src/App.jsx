@@ -23,6 +23,7 @@ import AnamneseInteligente from '@/components/pages/AnamneseInteligente'
 import PlanPresentation from '@/components/pages/PlanPresentation'
 import ApiTest from '@/components/pages/ApiTest'
 import TestAPI from '@/components/TestAPI'
+import DashboardPersonalizado from '@/components/DashboardPersonalizado'
 import EnhancedBMRCalculator from '@/components/EnhancedBMRCalculator'
 import './App.css'
 
@@ -74,7 +75,7 @@ function AppContent() {
             path="/dashboard" 
             element={
               <ProtectedRoute requiresAnamnese={true}>
-                <DashboardManus />
+                <DashboardPersonalizado />
               </ProtectedRoute>
             } 
           />
