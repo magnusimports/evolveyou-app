@@ -493,19 +493,27 @@ const AnamneseInteligente = () => {
     setIsSubmitting(true)
     
     try {
+      if (!user) {
+        console.error('❌ Usuário não encontrado ao salvar anamnese');
+        alert('Erro: usuário não encontrado. Faça login novamente.');
+        return;
+      }
+
       // Calcular IMC
       const altura = parseFloat(answers.altura) / 100
       const peso = parseFloat(answers.peso)
       const imc = peso / (altura * altura)
       
-      // Preparar dados do usuário
-      const userData = {
-        id: user?.uid || `user_${Date.now()}`,
-        anamnese: answers,
+      // Preparar dados da anamnese para salvar
+      const anamneseData = {
+        ...answers,
         imc: imc.toFixed(2),
-        created_at: new Date().toISOString(),
-        status: 'completed'
+        timestamp: new Date().toISOString(),
+        status: 'completed',
+        userId: user.uid
       }
+      
+      console.log('💾 Salvando anamnese para usuário:', user.uid);
       
       // Salvar no Firestore usando Firebase Function
       try {
@@ -515,12 +523,8 @@ const AnamneseInteligente = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            userId: userData.id,
-            dadosAnamnese: {
-              ...answers,
-              imc: userData.imc,
-              timestamp: userData.created_at
-            }
+            userId: user.uid,
+            dadosAnamnese: anamneseData
           })
         })
         
@@ -533,22 +537,27 @@ const AnamneseInteligente = () => {
         console.warn('⚠️ Erro na conexão com Firestore:', firestoreError)
       }
       
-      // Salvar no localStorage como backup
-      localStorage.setItem('dados_anamnese', JSON.stringify(answers))
+      // Salvar no localStorage para verificação imediata
+      localStorage.setItem('dados_anamnese', JSON.stringify(anamneseData))
       localStorage.setItem('anamnese_completa', 'true')
-      localStorage.setItem('evolveyou_user_data', JSON.stringify(userData))
-      if (user) {
-        localStorage.setItem('usuario_anamnese', user.uid)
-      }
+      localStorage.setItem('usuario_anamnese', user.uid)
+      
+      console.log('💾 Dados salvos no localStorage:', {
+        anamnese_completa: 'true',
+        usuario_anamnese: user.uid,
+        nome: anamneseData.nome
+      });
       
       // Simular delay de processamento
       await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      console.log('🚀 Redirecionando para dashboard...');
       
       // Redirecionar para o dashboard
       navigate('/dashboard')
       
     } catch (error) {
-      console.error('Erro ao salvar anamnese:', error)
+      console.error('❌ Erro ao salvar anamnese:', error)
       alert('Erro ao salvar anamnese. Tente novamente.')
     } finally {
       setIsSubmitting(false)

@@ -20,58 +20,58 @@ function ProtectedRoute({ children, requiresAnamnese = true }) {
       try {
         console.log('🔍 Verificando anamnese...');
         
-        // Verificar se há usuário no localStorage (bypass temporário)
-        const userFromStorage = localStorage.getItem('user');
-        if (userFromStorage) {
-          const userData = JSON.parse(userFromStorage);
-          console.log('👤 Usuário encontrado no localStorage:', userData.displayName);
-          
-          // Verificar anamnese no localStorage primeiro
-          const anamneseCompleta = localStorage.getItem('anamnese_completa');
-          const usuarioAnamnese = localStorage.getItem('usuario_anamnese');
-          
-          if (anamneseCompleta === 'true' && usuarioAnamnese === userData.uid) {
-            console.log('✅ Anamnese encontrada no localStorage');
-            setHasAnamnese(true);
-            setAnamneseLoading(false);
-            return;
-          }
+        // Usar o usuário do useAuth (inclui demo e Firebase)
+        if (!user) {
+          console.log('❌ Nenhum usuário encontrado no useAuth');
+          setHasAnamnese(false);
+          setAnamneseLoading(false);
+          return;
+        }
 
-          // Verificar no Firebase
-          console.log('🔍 Buscando anamnese no Firebase para:', userData.uid);
-          const anamneseDoc = await getDoc(doc(db, 'anamneses', userData.uid));
+        console.log('👤 Usuário encontrado:', user.displayName || user.email);
+        
+        // Verificar anamnese no localStorage primeiro
+        const anamneseCompleta = localStorage.getItem('anamnese_completa');
+        const usuarioAnamnese = localStorage.getItem('usuario_anamnese');
+        
+        if (anamneseCompleta === 'true' && usuarioAnamnese === user.uid) {
+          console.log('✅ Anamnese encontrada no localStorage');
+          setHasAnamnese(true);
+          setAnamneseLoading(false);
+          return;
+        }
+
+        // Verificar no Firebase
+        console.log('🔍 Buscando anamnese no Firebase para:', user.uid);
+        const anamneseDoc = await getDoc(doc(db, 'anamneses', user.uid));
+        
+        if (anamneseDoc.exists()) {
+          const anamneseData = anamneseDoc.data();
+          console.log('📊 Anamnese encontrada no Firebase:', {
+            nome: anamneseData.nome,
+            status: anamneseData.status || 'sem status'
+          });
           
-          if (anamneseDoc.exists()) {
-            const anamneseData = anamneseDoc.data();
-            console.log('📊 Anamnese encontrada no Firebase:', {
-              nome: anamneseData.nome,
-              status: anamneseData.status,
-              objetivo: anamneseData.objetivo
-            });
+          // Verificar se a anamnese está completa (mais flexível)
+          const isCompleta = anamneseData.status === 'completa' || 
+                            anamneseData.status === 'completed' ||
+                            (anamneseData.nome && anamneseData.idade && anamneseData.peso && anamneseData.altura);
+          
+          if (isCompleta) {
+            setHasAnamnese(true);
             
-            // Verificar se a anamnese está completa (mais flexível)
-            const isCompleta = anamneseData.status === 'completa' || 
-                              (anamneseData.nome && anamneseData.idade && anamneseData.peso && anamneseData.altura);
+            // Salvar no localStorage para próximas verificações
+            localStorage.setItem('anamnese_completa', 'true');
+            localStorage.setItem('dados_anamnese', JSON.stringify(anamneseData));
+            localStorage.setItem('usuario_anamnese', user.uid);
             
-            if (isCompleta) {
-              setHasAnamnese(true);
-              
-              // Salvar no localStorage para próximas verificações
-              localStorage.setItem('anamnese_completa', 'true');
-              localStorage.setItem('dados_anamnese', JSON.stringify(anamneseData));
-              localStorage.setItem('usuario_anamnese', userData.uid);
-              
-              console.log('✅ Anamnese válida encontrada e salva no localStorage');
-            } else {
-              console.log('❌ Anamnese encontrada mas não está completa');
-              setHasAnamnese(false);
-            }
+            console.log('✅ Anamnese válida encontrada e salva no localStorage');
           } else {
-            console.log('❌ Nenhuma anamnese encontrada no Firebase para:', userData.uid);
+            console.log('❌ Anamnese encontrada mas não está completa');
             setHasAnamnese(false);
           }
         } else {
-          console.log('❌ Nenhum usuário encontrado no localStorage');
+          console.log('❌ Nenhuma anamnese encontrada no Firebase para:', user.uid);
           setHasAnamnese(false);
         }
       } catch (error) {
@@ -79,9 +79,9 @@ function ProtectedRoute({ children, requiresAnamnese = true }) {
         
         // Em caso de erro, verificar se há dados válidos no localStorage
         const anamneseCompleta = localStorage.getItem('anamnese_completa');
-        const userFromStorage = localStorage.getItem('user');
+        const usuarioAnamnese = localStorage.getItem('usuario_anamnese');
         
-        if (anamneseCompleta === 'true' && userFromStorage) {
+        if (anamneseCompleta === 'true' && usuarioAnamnese === user?.uid) {
           console.log('⚠️ Usando dados do localStorage devido ao erro');
           setHasAnamnese(true);
         } else {
@@ -92,8 +92,11 @@ function ProtectedRoute({ children, requiresAnamnese = true }) {
       }
     };
 
-    checkAnamnese();
-  }, [user, requiresAnamnese]);
+    // Só executar se não estiver carregando
+    if (!loading) {
+      checkAnamnese();
+    }
+  }, [user, loading, requiresAnamnese]);
 
   if (loading || anamneseLoading) {
     return (
@@ -110,11 +113,9 @@ function ProtectedRoute({ children, requiresAnamnese = true }) {
     );
   }
 
-  // Verificar se há usuário (localStorage ou useAuth)
-  const userFromStorage = localStorage.getItem('user');
-  const hasUser = user || userFromStorage;
-
-  if (!hasUser) {
+  // Verificar se há usuário autenticado
+  if (!user) {
+    console.log('🔄 Redirecionando para login - usuário não autenticado');
     return <Navigate to="/login" replace />;
   }
 
