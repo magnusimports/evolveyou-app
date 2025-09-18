@@ -32,17 +32,20 @@ const PlanoAlimentar = () => {
     try {
       setLoading(true);
       
-      // Buscar plano alimentar via Cloud Function
-      const response = await fetch(`https://us-central1-evolveyou-prod.cloudfunctions.net/getPlanoAlimentar?userId=${user.uid}`);
-      const data = await response.json();
+      // Buscar anamnese do usuário
+      const anamneseDoc = await getDoc(doc(db, 'anamneses', user.uid));
       
-      if (data.success) {
-        setPlanoAlimentar(data.plano);
+      if (anamneseDoc.exists()) {
+        const anamneseData = anamneseDoc.data();
+        
+        // Gerar plano alimentar baseado na anamnese
+        const planoGerado = gerarPlanoAlimentar(anamneseData);
+        setPlanoAlimentar(planoGerado);
         
         // Carregar check-ins existentes
-        await loadCheckIns(data.plano.dataPlano);
+        await loadCheckIns(planoGerado.dataPlano);
       } else {
-        console.error('Erro ao carregar plano:', data.error);
+        console.log('Anamnese não encontrada');
         setPlanoAlimentar(getExamplePlanoAlimentar());
       }
     } catch (error) {
@@ -51,6 +54,110 @@ const PlanoAlimentar = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const gerarPlanoAlimentar = (anamnese) => {
+    // Calcular TMB e TDEE
+    const { peso, altura, idade, sexo, objetivo, nivel_atividade } = anamnese;
+    
+    let tmb;
+    if (sexo === 'masculino') {
+      tmb = (10 * peso) + (6.25 * altura) - (5 * idade) + 5;
+    } else {
+      tmb = (10 * peso) + (6.25 * altura) - (5 * idade) - 161;
+    }
+    
+    const fatoresAtividade = {
+      'sedentario': 1.2,
+      'pouco_ativo': 1.375,
+      'moderadamente_ativo': 1.55,
+      'muito_ativo': 1.725,
+      'extremamente_ativo': 1.9
+    };
+    
+    const fatorAtividade = fatoresAtividade[nivel_atividade] || 1.55;
+    const tdee = tmb * fatorAtividade;
+    
+    // Ajustar calorias baseado no objetivo
+    let caloriasAlvo = tdee;
+    if (objetivo === 'Perder peso') {
+      caloriasAlvo = tdee - 500;
+    } else if (objetivo === 'Ganhar massa muscular') {
+      caloriasAlvo = tdee + 300;
+    }
+    
+    // Distribuir calorias por refeição
+    const distribuicao = {
+      cafe_manha: 0.25,
+      lanche_manha: 0.10,
+      almoco: 0.35,
+      lanche_tarde: 0.10,
+      jantar: 0.20
+    };
+    
+    const refeicoes = [
+      {
+        id: 'cafe_manha',
+        nome: 'Café da Manhã',
+        horario: '07:00',
+        calorias: Math.round(caloriasAlvo * distribuicao.cafe_manha),
+        alimentos: [
+          { nome: 'Aveia em flocos', quantidade: '50g', calorias: 197 },
+          { nome: 'Banana', quantidade: '1 unidade', calorias: 105 },
+          { nome: 'Leite desnatado', quantidade: '200ml', calorias: 68 }
+        ]
+      },
+      {
+        id: 'lanche_manha',
+        nome: 'Lanche da Manhã',
+        horario: '10:00',
+        calorias: Math.round(caloriasAlvo * distribuicao.lanche_manha),
+        alimentos: [
+          { nome: 'Iogurte natural', quantidade: '150g', calorias: 90 },
+          { nome: 'Castanha do Pará', quantidade: '3 unidades', calorias: 60 }
+        ]
+      },
+      {
+        id: 'almoco',
+        nome: 'Almoço',
+        horario: '12:30',
+        calorias: Math.round(caloriasAlvo * distribuicao.almoco),
+        alimentos: [
+          { nome: 'Peito de frango grelhado', quantidade: '150g', calorias: 248 },
+          { nome: 'Arroz integral', quantidade: '100g', calorias: 123 },
+          { nome: 'Feijão carioca', quantidade: '80g', calorias: 76 },
+          { nome: 'Salada verde', quantidade: '100g', calorias: 20 },
+          { nome: 'Azeite de oliva', quantidade: '1 colher de sopa', calorias: 120 }
+        ]
+      },
+      {
+        id: 'lanche_tarde',
+        nome: 'Lanche da Tarde',
+        horario: '15:30',
+        calorias: Math.round(caloriasAlvo * distribuicao.lanche_tarde),
+        alimentos: [
+          { nome: 'Maçã', quantidade: '1 unidade', calorias: 80 },
+          { nome: 'Amendoim', quantidade: '20g', calorias: 113 }
+        ]
+      },
+      {
+        id: 'jantar',
+        nome: 'Jantar',
+        horario: '19:00',
+        calorias: Math.round(caloriasAlvo * distribuicao.jantar),
+        alimentos: [
+          { nome: 'Salmão grelhado', quantidade: '120g', calorias: 248 },
+          { nome: 'Batata doce', quantidade: '150g', calorias: 129 },
+          { nome: 'Brócolis', quantidade: '100g', calorias: 25 }
+        ]
+      }
+    ];
+    
+    return {
+      dataPlano: new Date().toISOString().split('T')[0],
+      totalCalorias: Math.round(caloriasAlvo),
+      refeicoes: refeicoes
+    };
   };
 
   const loadCheckIns = async (dataPlano) => {

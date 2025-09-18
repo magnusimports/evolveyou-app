@@ -54,14 +54,17 @@ const TreinoDoDia = () => {
     try {
       setLoading(true);
       
-      // Buscar treino do dia via Cloud Function
-      const response = await fetch(`https://us-central1-evolveyou-prod.cloudfunctions.net/getTreinoDoDia?userId=${user.uid}`);
-      const data = await response.json();
+      // Buscar anamnese do usuário
+      const anamneseDoc = await getDoc(doc(db, 'anamneses', user.uid));
       
-      if (data.success) {
-        setTreino(data.treino);
+      if (anamneseDoc.exists()) {
+        const anamneseData = anamneseDoc.data();
+        
+        // Gerar treino baseado na anamnese
+        const treinoGerado = gerarTreinoDoDia(anamneseData);
+        setTreino(treinoGerado);
       } else {
-        console.error('Erro ao carregar treino:', data.error);
+        console.log('Anamnese não encontrada');
         setTreino(getExampleTreino());
       }
     } catch (error) {
@@ -70,6 +73,149 @@ const TreinoDoDia = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const gerarTreinoDoDia = (anamnese) => {
+    const { experiencia_treino, frequencia_semanal, objetivo } = anamnese;
+    const hoje = new Date().getDay(); // 0 = domingo, 1 = segunda, etc.
+    
+    // Determinar se é dia de treino ou descanso
+    if (hoje === 0) { // Domingo = descanso
+      return {
+        tipo: 'descanso',
+        titulo: 'Dia de Descanso',
+        descricao: 'Hoje é seu dia de recuperação. Aproveite para relaxar e se preparar para os próximos treinos.',
+        atividades: [
+          'Caminhada leve (opcional)',
+          'Alongamento',
+          'Hidratação adequada',
+          'Sono reparador'
+        ]
+      };
+    }
+    
+    // Determinar nível de treino
+    let nivel = 'iniciante';
+    if (experiencia_treino === 'Menos de 1 ano' || experiencia_treino === '1-2 anos') {
+      nivel = 'intermediario';
+    } else if (experiencia_treino === 'Mais de 2 anos') {
+      nivel = 'avancado';
+    }
+    
+    // Determinar tipo de treino baseado no dia
+    const tiposTreino = ['A', 'B', 'C'];
+    const tipoTreino = tiposTreino[(hoje - 1) % 3]; // Segunda=A, Terça=B, Quarta=C, etc.
+    
+    // Exercícios por tipo de treino
+    const exerciciosPorTipo = {
+      'A': {
+        titulo: 'Treino A: Peito & Tríceps',
+        grupos: ['Peito', 'Tríceps'],
+        exercicios: [
+          {
+            nome: 'Supino reto com barra',
+            grupoMuscular: 'Peito',
+            series: nivel === 'iniciante' ? 3 : nivel === 'intermediario' ? 4 : 5,
+            repeticoes: nivel === 'iniciante' ? '10-12' : nivel === 'intermediario' ? '8-12' : '6-10',
+            descanso: '90s',
+            instrucoes: 'Mantenha os pés firmes no chão e controle o movimento'
+          },
+          {
+            nome: 'Supino inclinado com halteres',
+            grupoMuscular: 'Peito',
+            series: nivel === 'iniciante' ? 3 : 4,
+            repeticoes: '10-12',
+            descanso: '90s',
+            instrucoes: 'Foque na contração do peito superior'
+          },
+          {
+            nome: 'Tríceps testa com barra',
+            grupoMuscular: 'Tríceps',
+            series: 3,
+            repeticoes: '12-15',
+            descanso: '60s',
+            instrucoes: 'Mantenha os cotovelos fixos'
+          }
+        ]
+      },
+      'B': {
+        titulo: 'Treino B: Costas & Bíceps',
+        grupos: ['Costas', 'Bíceps'],
+        exercicios: [
+          {
+            nome: 'Puxada frontal',
+            grupoMuscular: 'Costas',
+            series: nivel === 'iniciante' ? 3 : 4,
+            repeticoes: '10-12',
+            descanso: '90s',
+            instrucoes: 'Puxe até o peito, contraindo as escápulas'
+          },
+          {
+            nome: 'Remada curvada',
+            grupoMuscular: 'Costas',
+            series: 3,
+            repeticoes: '8-10',
+            descanso: '90s',
+            instrucoes: 'Mantenha as costas retas'
+          },
+          {
+            nome: 'Rosca direta com barra',
+            grupoMuscular: 'Bíceps',
+            series: 3,
+            repeticoes: '12-15',
+            descanso: '60s',
+            instrucoes: 'Controle o movimento na descida'
+          }
+        ]
+      },
+      'C': {
+        titulo: 'Treino C: Pernas & Ombros',
+        grupos: ['Pernas', 'Ombros'],
+        exercicios: [
+          {
+            nome: 'Agachamento livre',
+            grupoMuscular: 'Pernas',
+            series: nivel === 'iniciante' ? 3 : 4,
+            repeticoes: '12-15',
+            descanso: '120s',
+            instrucoes: 'Desça até 90 graus, mantenha o core contraído'
+          },
+          {
+            nome: 'Leg press',
+            grupoMuscular: 'Pernas',
+            series: 3,
+            repeticoes: '15-20',
+            descanso: '90s',
+            instrucoes: 'Amplitude completa do movimento'
+          },
+          {
+            nome: 'Desenvolvimento com halteres',
+            grupoMuscular: 'Ombros',
+            series: 3,
+            repeticoes: '10-12',
+            descanso: '90s',
+            instrucoes: 'Não eleve os ombros durante o movimento'
+          }
+        ]
+      }
+    };
+    
+    const treinoEscolhido = exerciciosPorTipo[tipoTreino];
+    
+    return {
+      tipo: tipoTreino,
+      titulo: treinoEscolhido.titulo,
+      gruposMusculares: treinoEscolhido.grupos,
+      exercicios: treinoEscolhido.exercicios,
+      nivel: nivel,
+      duracao: '45-60 min',
+      observacoes: [
+        'Faça aquecimento antes de iniciar',
+        'Mantenha boa forma em todos os exercícios',
+        'Hidrate-se durante o treino',
+        nivel === 'iniciante' ? 'Foque na técnica antes do peso' : 'Mantenha intensidade alta'
+      ]
+    };
   };
 
   const getExampleTreino = () => {

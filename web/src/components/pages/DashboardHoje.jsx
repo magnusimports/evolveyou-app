@@ -84,7 +84,7 @@ const DashboardHoje = () => {
 
   const calculateDashboardData = (anamnese) => {
     // Calcular TMB usando fórmula Mifflin-St Jeor
-    const { peso, altura, idade, sexo, objetivo, nivelAtividade } = anamnese;
+    const { peso, altura, idade, sexo, objetivo, nivel_atividade } = anamnese;
     
     let tmb;
     if (sexo === 'masculino') {
@@ -96,20 +96,20 @@ const DashboardHoje = () => {
     // Fator de atividade
     const fatoresAtividade = {
       'sedentario': 1.2,
-      'leve': 1.375,
-      'moderado': 1.55,
-      'intenso': 1.725,
-      'muito_intenso': 1.9
+      'pouco_ativo': 1.375,
+      'moderadamente_ativo': 1.55,
+      'muito_ativo': 1.725,
+      'extremamente_ativo': 1.9
     };
     
-    const fatorAtividade = fatoresAtividade[nivelAtividade] || 1.55;
+    const fatorAtividade = fatoresAtividade[nivel_atividade] || 1.55;
     const tdee = tmb * fatorAtividade;
     
     // Ajustar calorias baseado no objetivo
     let caloriasAlvo = tdee;
-    if (objetivo === 'perder_peso') {
+    if (objetivo === 'Perder peso') {
       caloriasAlvo = tdee - 500; // Déficit de 500kcal
-    } else if (objetivo === 'ganhar_peso') {
+    } else if (objetivo === 'Ganhar massa muscular') {
       caloriasAlvo = tdee + 300; // Superávit de 300kcal
     }
     
