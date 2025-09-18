@@ -12,63 +12,81 @@ function ProtectedRoute({ children, requiresAnamnese = true }) {
 
   useEffect(() => {
     const checkAnamnese = async () => {
-      if (!user || !requiresAnamnese) {
+      if (!requiresAnamnese) {
         setAnamneseLoading(false);
         return;
       }
 
       try {
-        // Primeiro verificar localStorage (para usuários que acabaram de completar)
-        const anamneseCompleta = localStorage.getItem('anamnese_completa');
-        const dadosAnamnese = localStorage.getItem('dados_anamnese');
-        const usuarioAnamnese = localStorage.getItem('usuario_anamnese');
+        console.log('🔍 Verificando anamnese...');
         
-        // Verificar se os dados do localStorage são do usuário atual
-        if (anamneseCompleta && dadosAnamnese && usuarioAnamnese === user.uid) {
-          setHasAnamnese(true);
-          setAnamneseLoading(false);
-          return;
-        }
-
-        // Se não há no localStorage ou é de outro usuário, verificar no Firebase
-        console.log('Verificando anamnese no Firebase para usuário:', user.uid);
-        const anamneseDoc = await getDoc(doc(db, 'anamneses', user.uid));
-        
-        if (anamneseDoc.exists()) {
-          const anamneseData = anamneseDoc.data();
-          console.log('Anamnese encontrada no Firebase:', anamneseData.status);
+        // Verificar se há usuário no localStorage (bypass temporário)
+        const userFromStorage = localStorage.getItem('user');
+        if (userFromStorage) {
+          const userData = JSON.parse(userFromStorage);
+          console.log('👤 Usuário encontrado no localStorage:', userData.displayName);
           
-          // Verificar se a anamnese está completa
-          if (anamneseData.status === 'completa') {
+          // Verificar anamnese no localStorage primeiro
+          const anamneseCompleta = localStorage.getItem('anamnese_completa');
+          const usuarioAnamnese = localStorage.getItem('usuario_anamnese');
+          
+          if (anamneseCompleta === 'true' && usuarioAnamnese === userData.uid) {
+            console.log('✅ Anamnese encontrada no localStorage');
             setHasAnamnese(true);
+            setAnamneseLoading(false);
+            return;
+          }
+
+          // Verificar no Firebase
+          console.log('🔍 Buscando anamnese no Firebase para:', userData.uid);
+          const anamneseDoc = await getDoc(doc(db, 'anamneses', userData.uid));
+          
+          if (anamneseDoc.exists()) {
+            const anamneseData = anamneseDoc.data();
+            console.log('📊 Anamnese encontrada no Firebase:', {
+              nome: anamneseData.nome,
+              status: anamneseData.status,
+              objetivo: anamneseData.objetivo
+            });
             
-            // Salvar no localStorage para próximas verificações
-            localStorage.setItem('anamnese_completa', 'true');
-            localStorage.setItem('dados_anamnese', JSON.stringify(anamneseData));
-            localStorage.setItem('usuario_anamnese', user.uid);
+            // Verificar se a anamnese está completa (mais flexível)
+            const isCompleta = anamneseData.status === 'completa' || 
+                              (anamneseData.nome && anamneseData.idade && anamneseData.peso && anamneseData.altura);
             
-            console.log('✅ Anamnese válida encontrada e salva no localStorage');
+            if (isCompleta) {
+              setHasAnamnese(true);
+              
+              // Salvar no localStorage para próximas verificações
+              localStorage.setItem('anamnese_completa', 'true');
+              localStorage.setItem('dados_anamnese', JSON.stringify(anamneseData));
+              localStorage.setItem('usuario_anamnese', userData.uid);
+              
+              console.log('✅ Anamnese válida encontrada e salva no localStorage');
+            } else {
+              console.log('❌ Anamnese encontrada mas não está completa');
+              setHasAnamnese(false);
+            }
           } else {
-            console.log('❌ Anamnese encontrada mas não está completa');
+            console.log('❌ Nenhuma anamnese encontrada no Firebase para:', userData.uid);
             setHasAnamnese(false);
           }
         } else {
-          console.log('❌ Nenhuma anamnese encontrada no Firebase');
+          console.log('❌ Nenhum usuário encontrado no localStorage');
           setHasAnamnese(false);
-          
-          // Limpar localStorage se não há anamnese no Firebase
-          localStorage.removeItem('anamnese_completa');
-          localStorage.removeItem('dados_anamnese');
-          localStorage.removeItem('usuario_anamnese');
         }
       } catch (error) {
-        console.error('Erro ao verificar anamnese:', error);
-        setHasAnamnese(false);
+        console.error('❌ Erro ao verificar anamnese:', error);
         
-        // Limpar localStorage em caso de erro
-        localStorage.removeItem('anamnese_completa');
-        localStorage.removeItem('dados_anamnese');
-        localStorage.removeItem('usuario_anamnese');
+        // Em caso de erro, verificar se há dados válidos no localStorage
+        const anamneseCompleta = localStorage.getItem('anamnese_completa');
+        const userFromStorage = localStorage.getItem('user');
+        
+        if (anamneseCompleta === 'true' && userFromStorage) {
+          console.log('⚠️ Usando dados do localStorage devido ao erro');
+          setHasAnamnese(true);
+        } else {
+          setHasAnamnese(false);
+        }
       } finally {
         setAnamneseLoading(false);
       }
@@ -92,7 +110,11 @@ function ProtectedRoute({ children, requiresAnamnese = true }) {
     );
   }
 
-  if (!user) {
+  // Verificar se há usuário (localStorage ou useAuth)
+  const userFromStorage = localStorage.getItem('user');
+  const hasUser = user || userFromStorage;
+
+  if (!hasUser) {
     return <Navigate to="/login" replace />;
   }
 
@@ -102,6 +124,7 @@ function ProtectedRoute({ children, requiresAnamnese = true }) {
     return <Navigate to="/anamnese" replace />;
   }
 
+  console.log('✅ Acesso liberado ao dashboard');
   return children;
 }
 

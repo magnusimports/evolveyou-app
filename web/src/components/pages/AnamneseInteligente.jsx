@@ -59,292 +59,368 @@ const AnamneseInteligente = () => {
   }, [user]);
 
   const questions = [
+    // Pergunta inicial de nome
     {
       id: 'nome',
       category: 'Dados Pessoais',
-      question: 'Qual é o seu nome completo?',
+      question: 'Como você gostaria de ser chamado?',
       type: 'text',
       icon: User,
-      placeholder: 'Digite seu nome completo',
+      placeholder: 'Digite seu nome',
       required: true
     },
+    
+    // PARTE 1: O PONTO DE PARTIDA (SEU OBJETIVO, MOTIVAÇÃO E PRAZO)
     {
-      id: 'idade',
-      category: 'Idade',
-      question: 'Qual é a sua idade?',
-      type: 'number',
-      icon: Calendar,
-      placeholder: 'Digite sua idade',
-      required: true
-    },
-    {
-      id: 'sexo',
-      category: 'Sexo',
-      question: 'Qual é o seu sexo?',
-      type: 'select',
-      icon: Users,
-      options: ['Masculino', 'Feminino'],
-      required: true
-    },
-    {
-      id: 'altura',
-      category: 'Altura',
-      question: 'Qual é a sua altura (em cm)?',
-      type: 'number',
-      icon: Ruler,
-      placeholder: 'Ex: 175',
-      required: true
-    },
-    {
-      id: 'peso',
-      category: 'Peso',
-      question: 'Qual é o seu peso atual (em kg)?',
-      type: 'number',
-      icon: Scale,
-      placeholder: 'Ex: 70',
-      required: true
-    },
-    {
-      id: 'objetivo',
-      category: 'Objetivo',
-      question: 'Qual é o seu principal objetivo?',
+      id: 'objetivo_principal',
+      category: 'Objetivo Principal',
+      question: 'Qual é o seu principal objetivo neste momento?',
       type: 'select',
       icon: Target,
-      options: ['Perder peso', 'Ganhar massa muscular', 'Manter peso atual', 'Melhorar condicionamento físico'],
-      required: true
-    },
-    {
-      id: 'peso_meta',
-      category: 'Meta',
-      question: 'Qual é o seu peso meta (em kg)?',
-      type: 'number',
-      icon: Target,
-      placeholder: 'Ex: 75',
-      required: true
-    },
-    {
-      id: 'nivel_atividade',
-      category: 'Atividade',
-      question: 'Qual é o seu nível de atividade física?',
-      type: 'select',
-      icon: Activity,
       options: [
-        'Sedentário (nenhuma atividade)',
-        'Leve (1-2x por semana)',
-        'Moderado (3-4x por semana)',
-        'Intenso (5-6x por semana)',
-        'Muito intenso (todos os dias)'
-      ],
-      required: true
-    },
-    {
-      id: 'exercicios_preferidos',
-      category: 'Exercícios',
-      question: 'Quais exercícios você prefere?',
-      type: 'select',
-      icon: Activity,
-      options: [
-        'Musculação',
-        'Exercícios cardiovasculares',
-        'Treinamento funcional',
-        'Yoga/Pilates',
-        'Esportes coletivos',
-        'Caminhada/Corrida'
-      ],
-      required: true
-    },
-    {
-      id: 'condicoes_saude',
-      category: 'Saúde',
-      question: 'Você possui alguma condição de saúde especial?',
-      type: 'select',
-      icon: Heart,
-      options: [
-        'Diabetes',
-        'Hipertensão',
-        'Problemas cardíacos',
-        'Lesão no joelho',
-        'Problemas na coluna',
-        'Nenhuma condição especial'
-      ],
-      required: true
-    },
-    {
-      id: 'medicamentos',
-      category: 'Medicamentos',
-      question: 'Você toma medicamentos regularmente?',
-      type: 'select',
-      icon: Heart,
-      options: [
-        'Não tomo medicamentos',
-        'Sim, poucos medicamentos',
-        'Sim, vários medicamentos'
-      ],
-      required: true
-    },
-    {
-      id: 'habitos_alimentares',
-      category: 'Alimentação',
-      question: 'Como você avalia seus hábitos alimentares?',
-      type: 'select',
-      icon: Utensils,
-      options: [
-        'Muito ruins (fast food frequente)',
-        'Ruins (alimentação irregular)',
-        'Regulares (algumas refeições saudáveis)',
-        'Bons (maioria das refeições saudáveis)',
-        'Excelentes (alimentação muito equilibrada)'
-      ],
-      required: true
-    },
-    {
-      id: 'restricoes_alimentares',
-      category: 'Restrições',
-      question: 'Você possui alguma restrição alimentar?',
-      type: 'select',
-      icon: Utensils,
-      options: [
-        'Intolerância à lactose',
-        'Intolerância ao glúten/Celíaco',
-        'Vegetariano',
-        'Vegano',
-        'Restrições por diabetes',
-        'Nenhuma restrição'
-      ],
-      required: true
-    },
-    {
-      id: 'refeicoes_dia',
-      category: 'Refeições',
-      question: 'Quantas refeições você faz por dia?',
-      type: 'select',
-      icon: Utensils,
-      options: [
-        '1-2 refeições',
-        '3 refeições',
-        '4-5 refeições',
-        '6 ou mais refeições'
-      ],
-      required: true
-    },
-    {
-      id: 'consumo_agua',
-      category: 'Hidratação',
-      question: 'Quanto de água você bebe por dia?',
-      type: 'select',
-      icon: Utensils,
-      options: [
-        'Menos de 1 litro',
-        '1 a 1,5 litros',
-        '1,5 a 2 litros',
-        '2 a 3 litros',
-        'Mais de 3 litros'
-      ],
-      required: true
-    },
-    {
-      id: 'horas_sono',
-      category: 'Sono',
-      question: 'Quantas horas você dorme por noite?',
-      type: 'select',
-      icon: Moon,
-      options: [
-        'Menos de 5 horas',
-        '5 a 6 horas',
-        '6 a 7 horas',
-        '7 a 8 horas',
-        '8 a 9 horas',
-        'Mais de 9 horas'
-      ],
-      required: true
-    },
-    {
-      id: 'qualidade_sono',
-      category: 'Qualidade do Sono',
-      question: 'Como você avalia a qualidade do seu sono?',
-      type: 'select',
-      icon: Moon,
-      options: [
-        'Muito ruim (acordo várias vezes)',
-        'Ruim (acordo cansado)',
-        'Regular (às vezes acordo cansado)',
-        'Boa (acordo descansado)',
-        'Excelente (sono reparador)'
-      ],
-      required: true
-    },
-    {
-      id: 'nivel_stress',
-      category: 'Estresse',
-      question: 'Como você avalia seu nível de estresse?',
-      type: 'select',
-      icon: Brain,
-      options: [
-        'Muito baixo',
-        'Baixo',
-        'Moderado',
-        'Alto',
-        'Muito alto'
-      ],
-      required: true
-    },
-    {
-      id: 'habitos_vida',
-      category: 'Hábitos',
-      question: 'Você fuma ou consome álcool regularmente?',
-      type: 'select',
-      icon: Cigarette,
-      options: [
-        'Não fumo e não bebo',
-        'Fumo ocasionalmente',
-        'Bebo ocasionalmente',
-        'Bebo regularmente'
+        'Emagrecer e perder gordura corporal (preservar massa muscular)',
+        'Ganhar massa muscular (hipertrofia)',
+        'Melhorar minha saúde e condicionamento físico geral (performance)',
+        'Manter meu peso e composição corporal atuais (manutenção)',
+        'Reabilitação, melhora postural'
       ],
       required: true
     },
     {
       id: 'motivacao',
       category: 'Motivação',
-      question: 'O que mais te motiva a buscar uma vida mais saudável?',
-      type: 'select',
+      question: 'Qual é a principal MOTIVAÇÃO por trás do seu objetivo? (Marque as principais)',
+      type: 'multiselect',
       icon: Trophy,
       options: [
-        'Melhorar a saúde geral',
-        'Questões estéticas',
-        'Aumentar autoestima',
-        'Ter mais energia',
-        'Viver mais e melhor',
-        'Ser exemplo para a família'
+        'Melhorar minha saúde e bem-estar geral',
+        'Aumentar minha autoestima e me sentir mais confiante',
+        'Tenho um evento específico (viagem, casamento, formatura)',
+        'Performance para uma competição ou prova esportiva',
+        'Preparação para uma avaliação física (concurso, teste de emprego)',
+        'Outro motivo'
       ],
       required: true
     },
     {
-      id: 'tempo_exercicio',
-      category: 'Tempo',
-      question: 'Quanto tempo você pode dedicar aos exercícios por dia?',
+      id: 'prazo_objetivo',
+      category: 'Prazo',
+      question: 'Em quanto tempo você pretende alcançar este objetivo?',
       type: 'select',
-      icon: Timer,
+      icon: Clock,
       options: [
-        '15 a 30 minutos',
-        '30 a 45 minutos',
-        '45 a 60 minutos',
-        '60 a 90 minutos',
-        'Mais de 90 minutos'
+        'Curto Prazo: O mais rápido possível',
+        'Médio Prazo: Tenho um bom tempo',
+        'Longo Prazo: Sem pressa, focando na consistência',
+        'Contínuo: É um projeto de estilo de vida, sem um prazo final'
       ],
       required: true
     },
     {
-      id: 'experiencia',
-      category: 'Experiência',
-      question: 'Qual é a sua experiência anterior com programas de fitness/nutrição?',
+      id: 'mentalidade',
+      category: 'Mentalidade',
+      question: 'Para refinar, qual destas frases melhor descreve sua mentalidade?',
       type: 'select',
-      icon: Star,
+      icon: Brain,
       options: [
-        'Nenhuma experiência',
-        'Pouca experiência (tentativas isoladas)',
-        'Experiência moderada (alguns programas)',
-        'Boa experiência (vários programas)',
-        'Experiência extensa (lifestyle)'
+        'Prefiro uma abordagem mais agressiva, mesmo que seja mais difícil',
+        'Prefiro uma abordagem mais lenta e sustentável, que se encaixe melhor na minha rotina'
+      ],
+      required: true
+    },
+    {
+      id: 'sexo',
+      category: 'Dados Básicos',
+      question: 'Sexo Biológico:',
+      type: 'select',
+      icon: Users,
+      options: ['Masculino', 'Feminino'],
+      required: true
+    },
+    {
+      id: 'idade',
+      category: 'Dados Básicos',
+      question: 'Idade:',
+      type: 'number',
+      icon: Calendar,
+      placeholder: 'Digite sua idade em anos',
+      required: true
+    },
+    {
+      id: 'altura',
+      category: 'Dados Básicos',
+      question: 'Altura:',
+      type: 'number',
+      icon: Ruler,
+      placeholder: 'Digite sua altura em cm (ex: 175)',
+      required: true
+    },
+    {
+      id: 'peso',
+      category: 'Dados Básicos',
+      question: 'Peso:',
+      type: 'number',
+      icon: Scale,
+      placeholder: 'Digite seu peso em kg (ex: 70)',
+      required: true
+    },
+    
+    // PARTE 2: SUA ROTINA E METABOLISMO (GASTO CALÓRICO)
+    {
+      id: 'descricao_corpo',
+      category: 'Composição Corporal',
+      question: 'Como você descreveria seu corpo hoje, olhando no espelho?',
+      type: 'select',
+      icon: User,
+      options: [
+        'Muito magro(a), com ossos e músculos bem visíveis',
+        'Magro(a), com pouca gordura aparente e um visual "seco"',
+        'Atlético(a), com músculos definidos e pouca gordura',
+        'Normal ou mediano, com um pouco de gordura cobrindo os músculos',
+        'Acima do peso, com acúmulo de gordura notável na barriga, quadris ou outras áreas'
+      ],
+      required: true
+    },
+    {
+      id: 'atividade_trabalho',
+      category: 'Atividade no Trabalho',
+      question: 'Qual opção melhor descreve sua principal atividade no TRABALHO ou ESTUDOS?',
+      type: 'select',
+      icon: Activity,
+      options: [
+        'Nível 1 - Sedentário: Passo a maior parte do tempo sentado(a) (ex: escritório, motorista)',
+        'Nível 2 - Leve: Fico parte do tempo sentado(a), mas caminho um pouco ou fico em pé (ex: professor, vendedor)',
+        'Nível 3 - Moderado: Estou em constante movimento, caminhando bastante (ex: garçom, estoquista)',
+        'Nível 4 - Intenso: Meu trabalho exige muito esforço físico e carregar pesos (ex: construção civil)'
+      ],
+      required: true
+    },
+    {
+      id: 'atividade_tempo_livre',
+      category: 'Atividade no Tempo Livre',
+      question: 'E no seu TEMPO LIVRE (fora do trabalho e dos treinos), você se considera uma pessoa:',
+      type: 'select',
+      icon: Activity,
+      options: [
+        'Nível 1 - Muito tranquila: Passo a maior parte do tempo em atividades de baixo esforço (ler, ver TV)',
+        'Nível 2 - Levemente ativa: Faço tarefas domésticas leves e pequenas caminhadas',
+        'Nível 3 - Ativa: Estou sempre fazendo algo, como limpeza pesada, jardinagem, passeios longos'
+      ],
+      required: true
+    },
+    
+    // PARTE 3: SEU HISTÓRICO, TREINO E PERFORMANCE
+    {
+      id: 'experiencia_treino',
+      category: 'Experiência de Treino',
+      question: 'Qual seu nível de experiência com treinos de força (musculação, Crossfit)?',
+      type: 'select',
+      icon: Activity,
+      options: [
+        'Iniciante: Nunca treinei ou treinei por menos de 6 meses',
+        'Intermediário: Treino de forma consistente há mais de 6 meses a 2 anos',
+        'Avançado: Treino de forma séria e consistente há vários anos'
+      ],
+      required: true
+    },
+    {
+      id: 'local_treino',
+      category: 'Local de Treino',
+      question: 'Onde você pretende treinar?',
+      type: 'select',
+      icon: Activity,
+      options: [
+        'Em casa, com pouco ou nenhum equipamento',
+        'Em casa, com alguns equipamentos (halteres, elásticos)',
+        'Em uma academia com equipamentos básicos',
+        'Em uma academia completa',
+        'Em um Box de Crossfit'
+      ],
+      required: true
+    },
+    {
+      id: 'frequencia_treino',
+      category: 'Frequência de Treino',
+      question: 'Quantos dias na semana você REALMENTE tem disponibilidade para treinar?',
+      type: 'select',
+      icon: Calendar,
+      options: ['2 dias', '3 dias', '4 dias', '5 dias', '6 dias'],
+      required: true
+    },
+    {
+      id: 'atividades_praticadas',
+      category: 'Atividades',
+      question: 'Qual(is) atividade(s) você pratica ou gostaria de praticar? (Marque as principais)',
+      type: 'multiselect',
+      icon: Activity,
+      options: [
+        'Musculação / Treinamento de Força',
+        'Crossfit / Treinamento Funcional',
+        'Corrida / Caminhada',
+        'Futebol / Vôlei / Basquete',
+        'Beach Tennis / Tênis / Padel',
+        'Ciclismo / Bike',
+        'Natação / Hidroginástica',
+        'Lutas (Jiu-Jitsu, Boxe, etc.)',
+        'Dança / Yoga / Pilates',
+        'Outra'
+      ],
+      required: true
+    },
+    {
+      id: 'intensidade_treino',
+      category: 'Intensidade',
+      question: 'Em uma escala de 0 a 10, qual a intensidade média do seu esforço nos treinos?',
+      type: 'select',
+      icon: Activity,
+      options: [
+        '3-4 (Leve): Consigo conversar normalmente',
+        '5-6 (Moderado): Conversar se torna um desafio',
+        '7-8 (Intenso): Só consigo falar frases curtas',
+        '9-10 (Muito Intenso): Falar é quase impossível, esforço máximo'
+      ],
+      required: true
+    },
+    {
+      id: 'dores_lesoes',
+      category: 'Saúde',
+      question: 'Você sente alguma dor, desconforto ou tem alguma lesão ativa ou recorrente?',
+      type: 'text',
+      icon: Heart,
+      placeholder: 'Descreva suas dores/lesões ou digite "Não" se não tiver',
+      required: true
+    },
+    
+    // PARTE 4: SUPLEMENTAÇÃO E RECURSOS ERGOGÊNICOS
+    {
+      id: 'uso_suplementos',
+      category: 'Suplementação',
+      question: 'Você faz uso ou pretende fazer uso de suplementos alimentares?',
+      type: 'select',
+      icon: Heart,
+      options: ['Não', 'Sim'],
+      required: true
+    },
+    {
+      id: 'tipos_suplementos',
+      category: 'Tipos de Suplementos',
+      question: 'Se sim, quais você utiliza ou tem interesse? (Marque todos que se aplicam)',
+      type: 'multiselect',
+      icon: Heart,
+      options: [
+        'Proteína em Pó (Whey Protein, Caseína, Albumina, Proteína Vegana)',
+        'Hipercalórico / Massa',
+        'Carboidratos em Pó (Maltodextrina, Dextrose, Waxy Maize)',
+        'Creatina',
+        'Beta-Alanina',
+        'Cafeína (cápsulas ou como pré-treino)',
+        'Citrulina / Arginina',
+        'Multivitamínico',
+        'Vitamina D',
+        'Ômega 3',
+        'Coenzima Q10',
+        'Melatonina / Indutores de sono',
+        'Outros'
+      ],
+      required: false,
+      conditional: { field: 'uso_suplementos', value: 'Sim' }
+    },
+    {
+      id: 'recursos_ergogenicos',
+      category: 'Recursos Ergogênicos',
+      question: 'Você faz uso de algum recurso ergogênico farmacológico (hormônios/esteroides)? (Esta informação é confidencial e crucial para a segurança e eficácia do seu plano)',
+      type: 'select',
+      icon: Heart,
+      options: ['Não', 'Sim'],
+      required: true
+    },
+    
+    // PARTE 5: SEUS HÁBITOS E PREFERÊNCIAS ALIMENTARES
+    {
+      id: 'refeicoes_dia',
+      category: 'Refeições',
+      question: 'Quantas refeições você costuma fazer por dia?',
+      type: 'select',
+      icon: Utensils,
+      options: [
+        '1 a 2 refeições grandes',
+        '3 refeições principais (café, almoço, jantar)',
+        '4 a 5 refeições (as 3 principais + lanches)',
+        '6 ou mais refeições pequenas ao longo do dia'
+      ],
+      required: true
+    },
+    {
+      id: 'fontes_proteina',
+      category: 'Proteínas',
+      question: 'Marque as fontes de PROTEÍNA que você mais gosta e costuma comer:',
+      type: 'multiselect',
+      icon: Utensils,
+      options: [
+        'Frango',
+        'Carne vermelha (bovina, suína)',
+        'Peixes (tilápia, salmão)',
+        'Ovos',
+        'Laticínios (iogurte, queijos)',
+        'Proteínas em pó (Whey, Albumina)',
+        'Proteínas vegetais (lentilha, grão-de-bico, tofu, soja)'
+      ],
+      required: true
+    },
+    {
+      id: 'fontes_carboidrato',
+      category: 'Carboidratos',
+      question: 'Marque as fontes de CARBOIDRATO que você mais gosta e costuma comer:',
+      type: 'multiselect',
+      icon: Utensils,
+      options: [
+        'Arroz branco / integral',
+        'Batatas (inglesa, doce) / Mandioca',
+        'Massas / Pães',
+        'Aveia',
+        'Frutas em geral',
+        'Legumes e verduras'
+      ],
+      required: true
+    },
+    {
+      id: 'restricoes_alimentares',
+      category: 'Restrições',
+      question: 'Você possui alguma alergia, intolerância ou restrição alimentar severa?',
+      type: 'multiselect',
+      icon: Utensils,
+      options: [
+        'Não',
+        'Sim, a lactose',
+        'Sim, ao glúten (Celíaco ou sensibilidade)',
+        'Sim, a outros alimentos'
+      ],
+      required: true
+    },
+    {
+      id: 'consumo_agua',
+      category: 'Hidratação',
+      question: 'Quanta água você bebe por dia?',
+      type: 'select',
+      icon: Utensils,
+      options: [
+        'Quase não bebo água, mais sucos e refrigerantes',
+        '1 a 2 copos (menos de 1 litro)',
+        '3 a 5 copos (cerca de 1,5 litros)',
+        'Mais de 6 copos (mais de 2 litros)'
+      ],
+      required: true
+    },
+    {
+      id: 'alimentacao_fins_semana',
+      category: 'Fins de Semana',
+      question: 'Como é sua alimentação nos fins de semana?',
+      type: 'select',
+      icon: Utensils,
+      options: [
+        'Mantenho o mesmo padrão da semana',
+        'Faço de 1 a 2 "refeições livres" (pizza, lanche, etc)',
+        'É bem diferente, com muito mais "escapadas" da dieta'
       ],
       required: true
     }
@@ -360,17 +436,56 @@ const AnamneseInteligente = () => {
     }))
   }
 
+  const handleMultiSelectAnswer = (option) => {
+    const currentAnswers = answers[currentQuestion.id] || []
+    const isSelected = currentAnswers.includes(option)
+    
+    let newAnswers
+    if (isSelected) {
+      newAnswers = currentAnswers.filter(item => item !== option)
+    } else {
+      newAnswers = [...currentAnswers, option]
+    }
+    
+    setAnswers(prev => ({
+      ...prev,
+      [currentQuestion.id]: newAnswers
+    }))
+  }
+
+  // Verificar se a pergunta deve ser exibida baseado em condições
+  const shouldShowQuestion = (question) => {
+    if (!question.conditional) return true
+    
+    const { field, value } = question.conditional
+    return answers[field] === value
+  }
+
   const handleNext = () => {
-    if (currentStep < questions.length - 1) {
-      setCurrentStep(currentStep + 1)
+    let nextStep = currentStep + 1
+    
+    // Pular perguntas condicionais que não devem ser exibidas
+    while (nextStep < questions.length && !shouldShowQuestion(questions[nextStep])) {
+      nextStep++
+    }
+    
+    if (nextStep < questions.length) {
+      setCurrentStep(nextStep)
     } else {
       handleSubmit()
     }
   }
 
   const handlePrevious = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
+    let prevStep = currentStep - 1
+    
+    // Pular perguntas condicionais que não devem ser exibidas
+    while (prevStep >= 0 && !shouldShowQuestion(questions[prevStep])) {
+      prevStep--
+    }
+    
+    if (prevStep >= 0) {
+      setCurrentStep(prevStep)
     }
   }
 
@@ -440,7 +555,9 @@ const AnamneseInteligente = () => {
     }
   }
 
-  const isAnswered = answers[currentQuestion?.id]
+  const isAnswered = currentQuestion?.type === 'multiselect' 
+    ? (answers[currentQuestion?.id] || []).length > 0
+    : answers[currentQuestion?.id]
   const canProceed = isAnswered || !currentQuestion?.required
 
   if (isSubmitting) {
@@ -516,6 +633,32 @@ const AnamneseInteligente = () => {
                     {option}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {currentQuestion?.type === 'multiselect' && (
+              <div className="space-y-3">
+                {currentQuestion.options?.map((option, index) => {
+                  const isSelected = (answers[currentQuestion.id] || []).includes(option)
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleMultiSelectAnswer(option)}
+                      className={`w-full p-4 text-left rounded-lg border-2 transition-all flex items-center gap-3 ${
+                        isSelected
+                          ? 'border-green-500 bg-green-50 text-green-700'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        isSelected ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                      }`}>
+                        {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
+                      </div>
+                      {option}
+                    </button>
+                  )
+                })}
               </div>
             )}
 
