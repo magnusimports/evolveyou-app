@@ -7,12 +7,14 @@ import DashboardSimple from '@/components/pages/DashboardSimple'
 import DashboardAdvanced from '@/components/pages/DashboardAdvanced'
 import DashboardManus from '@/components/pages/DashboardManus'
 import DashboardHoje from '@/components/pages/DashboardHoje'
-import PlanoAlimentar from '@/components/pages/PlanoAlimentar'
+import PlanoAlimentarNovo from '@/components/pages/PlanoAlimentarNovo'
 import TreinoDoDia from '@/components/pages/TreinoDoDia'
 import PlanoSemanal from '@/components/pages/PlanoSemanal'
 import Progresso from '@/components/pages/Progresso'
 import Configuracoes from '@/components/pages/Configuracoes'
 import Perfil from '@/components/pages/Perfil'
+import Premium from '@/components/pages/Premium'
+import TestesAutomatizados from '@/components/pages/TestesAutomatizados'
 import Login from '@/components/pages/Login'
 import Register from '@/components/pages/Register'
 import Nutrition from '@/components/pages/Nutrition'
@@ -91,7 +93,7 @@ function AppContent() {
             path="/nutrition" 
             element={
               <ProtectedRoute requiresAnamnese={true}>
-                <PlanoAlimentar />
+                <PlanoAlimentarNovo />
               </ProtectedRoute>
             } 
           />
@@ -99,7 +101,7 @@ function AppContent() {
             path="/dieta" 
             element={
               <ProtectedRoute requiresAnamnese={true}>
-                <PlanoAlimentar />
+                <PlanoAlimentarNovo />
               </ProtectedRoute>
             } 
           />
@@ -148,6 +150,22 @@ function AppContent() {
             element={
               <ProtectedRoute requiresAnamnese={true}>
                 <Perfil />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/premium" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <Premium />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/testes" 
+            element={
+              <ProtectedRoute requiresAnamnese={false}>
+                <TestesAutomatizados />
               </ProtectedRoute>
             } 
           />

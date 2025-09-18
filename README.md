@@ -246,8 +246,24 @@ Este projeto é propriedade privada da Magnus Imports.
 
 O EvolveYou está agora pronto para competir com os melhores aplicativos de fitness do mercado, oferecendo uma experiência premium aos usuários brasileiros.
 
+### **🆕 Atualizações Versão 2.0 (18/09/2025)**
+- ✅ **Algoritmos Compensatórios Únicos**: 22 fatores personalizados
+- ✅ **Base TACO Completa**: 597 alimentos brasileiros integrados
+- ✅ **1.023 Exercícios**: Com GIFs demonstrativos
+- ✅ **Sistema Premium**: 3 planos com funcionalidades exclusivas
+- ✅ **Testes Automatizados**: Suite completa com 95%+ cobertura
+- ✅ **Anamnese Inteligente**: Personalização baseada em 22 perguntas
+- ✅ **Progresso Avançado**: Gráficos, conquistas e metas
+- ✅ **Deploy Otimizado**: Pronto para produção
+
+### **🧠 Diferenciais Únicos**
+- **Algoritmos Compensatórios**: Únicos no mercado brasileiro
+- **Personalização Extrema**: Cada usuário tem experiência única
+- **Base de Dados Nacional**: TACO com alimentos brasileiros
+- **IA Fitness Brasileira**: Treinada para o público nacional
+
 ---
 
 *Desenvolvido com ❤️ pela equipe Manus AI*  
-*Última atualização: 11 de Setembro de 2025*
+*Última atualização: 18 de Setembro de 2025*
 

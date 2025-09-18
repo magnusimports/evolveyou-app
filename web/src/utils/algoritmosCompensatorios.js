@@ -8,7 +8,7 @@
 /**
  * Calcula TMB usando fórmula Mifflin-St Jeor com fatores compensatórios
  */
-function calcularTMBCompensatorio(anamnese) {
+export function calcularTMBCompensatorio(anamnese) {
   const { sexo, idade, peso, altura, descricao_corpo, recursos_ergogenicos, uso_suplementos } = anamnese;
   
   // TMB base usando Mifflin-St Jeor
@@ -64,7 +64,7 @@ function calcularTMBCompensatorio(anamnese) {
 /**
  * Calcula TDEE com fatores de atividade compensatórios avançados
  */
-function calcularTDEECompensatorio(anamnese) {
+export function calcularTDEECompensatorio(anamnese) {
   const tmb = calcularTMBCompensatorio(anamnese);
   
   // FATOR DE ATIVIDADE TRABALHO
@@ -140,7 +140,7 @@ function calcularTDEECompensatorio(anamnese) {
 /**
  * Calcula ajuste calórico baseado no objetivo e mentalidade
  */
-function calcularAjusteCaloricoCompensatorio(anamnese, tdee) {
+export function calcularAjusteCaloricoCompensatorio(anamnese, tdee) {
   const { objetivo_principal, mentalidade, prazo_objetivo } = anamnese;
   
   let ajusteBase = 0;
@@ -199,7 +199,7 @@ function calcularAjusteCaloricoCompensatorio(anamnese, tdee) {
 /**
  * Distribui macronutrientes baseado no objetivo e preferências
  */
-function calcularMacronutrientesCompensatorios(anamnese, caloriasAlvo) {
+export function calcularMacronutrientesCompensatorios(anamnese, caloriasAlvo) {
   const { objetivo_principal, experiencia_treino, recursos_ergogenicos } = anamnese;
   
   let percProteina, percCarbo, percGordura;
@@ -256,7 +256,7 @@ function calcularMacronutrientesCompensatorios(anamnese, caloriasAlvo) {
 /**
  * Gera distribuição de refeições baseada nas preferências
  */
-function gerarDistribuicaoRefeicoes(anamnese) {
+export function gerarDistribuicaoRefeicoes(anamnese) {
   const { refeicoes_dia } = anamnese;
   
   let distribuicao;
@@ -311,7 +311,7 @@ function gerarDistribuicaoRefeicoes(anamnese) {
 /**
  * Função principal que aplica todos os algoritmos compensatórios
  */
-function aplicarAlgoritmosCompensatorios(anamnese) {
+export function aplicarAlgoritmosCompensatorios(anamnese) {
   console.log('🧠 Aplicando algoritmos compensatórios avançados...');
   
   // 1. Calcular TMB com fatores compensatórios
@@ -349,13 +349,4 @@ function aplicarAlgoritmosCompensatorios(anamnese) {
     }
   };
 }
-
-module.exports = {
-  calcularTMBCompensatorio,
-  calcularTDEECompensatorio,
-  calcularAjusteCaloricoCompensatorio,
-  calcularMacronutrientesCompensatorios,
-  gerarDistribuicaoRefeicoes,
-  aplicarAlgoritmosCompensatorios
-};
 

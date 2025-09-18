@@ -5,7 +5,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import alimentosDB from '@/utils/alimentosDatabase';
 import { gerarDietaPersonalizada } from '@/utils/dietaPersonalizada';
 
-const PlanoAlimentar = () => {
+const PlanoAlimentarNovo = () => {
   const [planoAlimentar, setPlanoAlimentar] = useState(null);
   const [checkIns, setCheckIns] = useState({});
   const [loading, setLoading] = useState(true);
@@ -20,146 +20,32 @@ const PlanoAlimentar = () => {
     try {
       console.log('🍽️ Carregando plano alimentar personalizado...');
       
-      // Buscar dados da anamnese
       const dadosAnamnese = localStorage.getItem('dados_anamnese');
       if (!dadosAnamnese) {
         console.log('❌ Dados da anamnese não encontrados');
-        gerarPlanoFallback();
+        setError("Dados da anamnese não encontrados para gerar o plano alimentar.");
+        setLoading(false);
         return;
       }
 
       const anamnese = JSON.parse(dadosAnamnese);
-      console.log('📊 Dados da anamnese carregados:', {
-        nome: anamnese.nome,
-        objetivo: anamnese.objetivo_principal,
-        preferencias: anamnese.proteinas_preferidas
-      });
+      console.log('📊 Dados da anamnese carregados para o novo plano:', anamnese);
 
-      // Gerar plano personalizado usando algoritmos avançados + base TACO
       const planoPersonalizado = gerarDietaPersonalizada(anamnese);
       
       if (planoPersonalizado && planoPersonalizado.refeicoes) {
-        console.log('✅ Plano alimentar personalizado gerado com sucesso');
+        console.log('✅ Novo plano alimentar personalizado gerado com sucesso');
         setPlanoAlimentar(planoPersonalizado);
       } else {
-        console.log('⚠️ Falha na geração personalizada, usando fallback');
-        gerarPlanoFallback();
+        console.log('⚠️ Falha na geração do novo plano personalizado');
+        setError("Não foi possível gerar seu plano alimentar personalizado.");
       }
     } catch (error) {
-      console.error('❌ Erro ao gerar plano alimentar:', error);
-      gerarPlanoFallback();
+      console.error('❌ Erro ao gerar novo plano alimentar:', error);
+      setError("Ocorreu um erro inesperado ao gerar seu plano.");
     } finally {
       setLoading(false);
     }
-  };
-
-  const gerarPlanoFallback = () => {
-    console.log('🔄 Gerando plano alimentar básico com base TACO...');
-    
-    // Usar base TACO para gerar plano básico
-    const alimentosCafeManha = alimentosDB.selecionarParaRefeicao('cafe_manha');
-    const alimentosAlmoco = alimentosDB.selecionarParaRefeicao('almoco');
-    const alimentosJantar = alimentosDB.selecionarParaRefeicao('jantar');
-    
-    // Selecionar alimentos específicos da base TACO
-    const aveia = alimentosDB.buscarPorNome('aveia')[0];
-    const banana = alimentosDB.buscarPorNome('banana')[0];
-    const leite = alimentosDB.buscarPorNome('leite')[0];
-    const arroz = alimentosDB.buscarPorNome('arroz')[0];
-    const feijao = alimentosDB.buscarPorNome('feijão')[0];
-    const frango = alimentosDB.buscarPorNome('frango')[0];
-    const brocolis = alimentosDB.buscarPorNome('brócolis')[0];
-
-    const refeicoesTaco = [
-      {
-        nome: 'Café da Manhã',
-        percentualDia: 25,
-        alimentos: [
-          gerarAlimentoRefeicao(aveia, 40),
-          gerarAlimentoRefeicao(banana, 100),
-          gerarAlimentoRefeicao(leite, 200)
-        ]
-      },
-      {
-        nome: 'Lanche da Manhã',
-        percentualDia: 10,
-        alimentos: [
-          gerarAlimentoRefeicao(alimentosDB.buscarPorNome('maçã')[0] || banana, 150)
-        ]
-      },
-      {
-        nome: 'Almoço',
-        percentualDia: 35,
-        alimentos: [
-          gerarAlimentoRefeicao(arroz, 100),
-          gerarAlimentoRefeicao(feijao, 80),
-          gerarAlimentoRefeicao(frango, 120),
-          gerarAlimentoRefeicao(brocolis, 100)
-        ]
-      },
-      {
-        nome: 'Lanche da Tarde',
-        percentualDia: 15,
-        alimentos: [
-          gerarAlimentoRefeicao(alimentosDB.buscarPorNome('iogurte')[0] || leite, 150)
-        ]
-      },
-      {
-        nome: 'Jantar',
-        percentualDia: 15,
-        alimentos: [
-          gerarAlimentoRefeicao(alimentosDB.buscarPorNome('salmão')[0] || frango, 100),
-          gerarAlimentoRefeicao(alimentosDB.buscarPorNome('batata')[0] || arroz, 100)
-        ]
-      }
-    ];
-
-    const planoBasico = {
-      informacoes: {
-        caloriasAlvo: 1800,
-        macronutrientes: {
-          proteina: { gramas: 135, percentual: 30 },
-          carboidrato: { gramas: 203, percentual: 45 },
-          gordura: { gramas: 50, percentual: 25 }
-        },
-        numeroRefeicoes: 5,
-        observacoes: [
-          '🍽️ Plano básico gerado com alimentos da base TACO brasileira',
-          '📊 597 alimentos disponíveis para personalização',
-          '🎯 Baseado em preferências alimentares padrão'
-        ]
-      },
-      refeicoes: refeicoesTaco.map(refeicao => ({
-        ...refeicao,
-        macros: refeicao.alimentos.reduce((acc, alimento) => ({
-          calorias: acc.calorias + alimento.calorias,
-          proteinas: acc.proteinas + alimento.proteinas,
-          carboidratos: acc.carboidratos + alimento.carboidratos,
-          gorduras: acc.gorduras + alimento.gorduras
-        }), { calorias: 0, proteinas: 0, carboidratos: 0, gorduras: 0 })
-      }))
-    };
-
-    setPlanoAlimentar(planoBasico);
-  };
-
-  const gerarAlimentoRefeicao = (alimento, porcaoGramas) => {
-    if (!alimento) {
-      return { nome: 'Alimento não encontrado', quantidade: porcaoGramas, unidade: 'g', calorias: 0, proteinas: 0, carboidratos: 0, gorduras: 0 };
-    }
-
-    const nutricao = alimentosDB.obterNutricaoPorcao(alimento, porcaoGramas);
-    
-    return {
-      nome: alimento.name,
-      quantidade: porcaoGramas,
-      unidade: 'g',
-      calorias: nutricao.calorias,
-      proteinas: nutricao.proteinas,
-      carboidratos: nutricao.carboidratos,
-      gorduras: nutricao.gorduras,
-      categoria: alimento.category
-    };
   };
 
   const loadCheckIns = async () => {
@@ -203,7 +89,7 @@ const PlanoAlimentar = () => {
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-white text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p>Carregando plano alimentar...</p>
+          <p>Gerando seu novo plano alimentar...</p>
         </div>
       </div>
     );
@@ -242,7 +128,7 @@ const PlanoAlimentar = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-              <Utensils className="w-6 h-6" />
+              {/* <Utensils className="w-6 h-6" /> */}
             </div>
             <div>
               <h1 className="text-xl font-bold">Plano Alimentar</h1>
@@ -294,9 +180,9 @@ const PlanoAlimentar = () => {
             </div>
           </div>
 
-          {planoAlimentar.informacoes.observacoes && (
+          {planoAlimentar.observacoes && (
             <div className="space-y-1">
-              {planoAlimentar.informacoes.observacoes.map((obs, index) => (
+              {planoAlimentar.observacoes.map((obs, index) => (
                 <p key={index} className="text-sm text-gray-400">{obs}</p>
               ))}
             </div>
@@ -327,7 +213,7 @@ const PlanoAlimentar = () => {
                       : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
                   }`}
                 >
-                  <Check className="w-5 h-5" />
+                  {/* <Check className="w-5 h-5" /> */}
                 </button>
               </div>
 
@@ -380,23 +266,23 @@ const PlanoAlimentar = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700">
         <div className="flex justify-around py-2">
           <Link to="/dashboard" className="flex flex-col items-center py-2 px-4">
-            <Home className="w-6 h-6 text-gray-400" />
+            {/* <Home className="w-6 h-6 text-gray-400" /> */}
             <span className="text-xs text-gray-400 mt-1">Hoje</span>
           </Link>
           <Link to="/dieta" className="flex flex-col items-center py-2 px-4">
-            <Utensils className="w-6 h-6 text-green-500" />
+            {/* <Utensils className="w-6 h-6 text-green-500" /> */}
             <span className="text-xs text-green-500 mt-1">Dieta</span>
           </Link>
           <Link to="/treino" className="flex flex-col items-center py-2 px-4">
-            <Dumbbell className="w-6 h-6 text-gray-400" />
+            {/* <Dumbbell className="w-6 h-6 text-gray-400" /> */}
             <span className="text-xs text-gray-400 mt-1">Treino</span>
           </Link>
           <Link to="/plano" className="flex flex-col items-center py-2 px-4">
-            <Calendar className="w-6 h-6 text-gray-400" />
+            {/* <Calendar className="w-6 h-6 text-gray-400" /> */}
             <span className="text-xs text-gray-400 mt-1">Plano</span>
           </Link>
           <Link to="/progresso" className="flex flex-col items-center py-2 px-4">
-            <TrendingUp className="w-6 h-6 text-gray-400" />
+            {/* <TrendingUp className="w-6 h-6 text-gray-400" /> */}
             <span className="text-xs text-gray-400 mt-1">Progresso</span>
           </Link>
         </div>
@@ -408,5 +294,5 @@ const PlanoAlimentar = () => {
   );
 };
 
-export default PlanoAlimentar;
+export default PlanoAlimentarNovo;
 
