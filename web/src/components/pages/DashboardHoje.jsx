@@ -331,11 +331,11 @@ const DashboardHoje = () => {
           <p className="text-sm text-gray-400">{dashboardData.greeting.date}</p>
           <h1 className="text-xl font-bold text-white">{dashboardData.greeting.nickname}</h1>
         </div>
-        <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-purple-500 rounded-full flex items-center justify-center">
+        <Link to="/configuracoes" className="w-10 h-10 bg-gradient-to-r from-green-500 to-purple-500 rounded-full flex items-center justify-center hover:scale-105 transition-transform">
           <span className="text-white font-bold text-sm">
             {(user?.displayName || 'U').charAt(0).toUpperCase()}
           </span>
-        </div>
+        </Link>
       </header>
 
       {/* Conteúdo Principal */}

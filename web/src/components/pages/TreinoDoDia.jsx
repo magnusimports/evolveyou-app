@@ -215,11 +215,11 @@ const TreinoDoDia = () => {
             <p className="text-sm text-gray-400">Hoje é</p>
             <h1 className="text-xl lg:text-2xl font-bold text-white">Dia de Descanso</h1>
           </div>
-          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-green-500 rounded-full flex items-center justify-center">
+          <Link to="/configuracoes" className="w-10 h-10 bg-gradient-to-r from-purple-500 to-green-500 rounded-full flex items-center justify-center hover:scale-105 transition-transform">
             <span className="text-white font-bold text-sm">
               {(user?.displayName || 'U').charAt(0).toUpperCase()}
             </span>
-          </div>
+          </Link>
         </header>
 
         <main className="flex-grow px-4 lg:px-5 flex items-center justify-center">
@@ -273,11 +273,11 @@ const TreinoDoDia = () => {
           <p className="text-sm text-gray-400">Treino de Hoje</p>
           <h1 className="text-xl lg:text-2xl font-bold text-white">{treino?.titulo}</h1>
         </div>
-        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-green-500 rounded-full flex items-center justify-center">
+        <Link to="/configuracoes" className="w-10 h-10 bg-gradient-to-r from-purple-500 to-green-500 rounded-full flex items-center justify-center hover:scale-105 transition-transform">
           <span className="text-white font-bold text-sm">
             {(user?.displayName || 'U').charAt(0).toUpperCase()}
           </span>
-        </div>
+        </Link>
       </header>
 
       {/* Conteúdo Principal */}

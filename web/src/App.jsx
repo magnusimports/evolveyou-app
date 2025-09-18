@@ -11,6 +11,8 @@ import PlanoAlimentar from '@/components/pages/PlanoAlimentar'
 import TreinoDoDia from '@/components/pages/TreinoDoDia'
 import PlanoSemanal from '@/components/pages/PlanoSemanal'
 import Progresso from '@/components/pages/Progresso'
+import Configuracoes from '@/components/pages/Configuracoes'
+import Perfil from '@/components/pages/Perfil'
 import Login from '@/components/pages/Login'
 import Register from '@/components/pages/Register'
 import Nutrition from '@/components/pages/Nutrition'
@@ -130,6 +132,22 @@ function AppContent() {
             element={
               <ProtectedRoute requiresAnamnese={true}>
                 <Progresso />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/configuracoes" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <Configuracoes />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/perfil" 
+            element={
+              <ProtectedRoute requiresAnamnese={true}>
+                <Perfil />
               </ProtectedRoute>
             } 
           />
