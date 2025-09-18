@@ -59,12 +59,13 @@ const TreinoDoDia = () => {
       
       if (anamneseDoc.exists()) {
         const anamneseData = anamneseDoc.data();
+        console.log('🏋️ Gerando treino baseado na anamnese:', anamneseData);
         
-        // Gerar treino baseado na anamnese
-        const treinoGerado = gerarTreinoDoDia(anamneseData);
-        setTreino(treinoGerado);
+        // Gerar treino personalizado baseado na anamnese
+        const treinoPersonalizado = gerarTreinoPersonalizado(anamneseData);
+        setTreino(treinoPersonalizado);
       } else {
-        console.log('Anamnese não encontrada');
+        console.log('Anamnese não encontrada, usando treino exemplo');
         setTreino(getExampleTreino());
       }
     } catch (error) {
@@ -75,12 +76,69 @@ const TreinoDoDia = () => {
     }
   };
 
-  const gerarTreinoDoDia = (anamnese) => {
-    const { experiencia_treino, frequencia_semanal, objetivo } = anamnese;
-    const hoje = new Date().getDay(); // 0 = domingo, 1 = segunda, etc.
+  const gerarTreinoPersonalizado = (anamnese) => {
+    try {
+      // Importar e aplicar lógica de treinos personalizados
+      const { gerarTreinoPersonalizado: gerarTreino } = require('/functions/algorithms/treinoPersonalizado.js');
+      const programaSemanal = gerarTreino(anamnese);
+      
+      // Obter treino do dia atual
+      const hoje = new Date().getDay();
+      const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+      const diaAtual = diasSemana[hoje];
+      
+      const treinoDoDia = programaSemanal.treinos[diaAtual];
+      
+      console.log('✅ Treino do dia gerado:', treinoDoDia);
+      
+      // Adaptar formato para o componente
+      if (treinoDoDia.tipo === 'descanso') {
+        return {
+          tipo: 'descanso',
+          titulo: treinoDoDia.titulo,
+          descricao: treinoDoDia.descricao || 'Dia dedicado ao descanso e recuperação muscular',
+          atividades: treinoDoDia.atividades || [
+            'Caminhada leve (20-30 min)',
+            'Alongamento (10-15 min)',
+            'Hidratação adequada',
+            'Sono reparador (7-9 horas)'
+          ],
+          observacoes: treinoDoDia.observacoes || []
+        };
+      } else {
+        return {
+          tipo: 'treino',
+          titulo: treinoDoDia.titulo,
+          grupos: treinoDoDia.gruposMusculares,
+          duracao: treinoDoDia.duracao || 60,
+          exercicios: treinoDoDia.exercicios.map(ex => ({
+            nome: ex.nome,
+            grupoMuscular: ex.grupo,
+            series: ex.series,
+            repeticoes: ex.repeticoes,
+            descanso: ex.descanso,
+            carga: ex.carga,
+            instrucoes: ex.instrucoes,
+            equipamento: ex.equipamento,
+            dificuldade: ex.dificuldade
+          })),
+          observacoes: treinoDoDia.observacoes || [],
+          informacoes: programaSemanal.informacoes
+        };
+      }
+    } catch (error) {
+      console.error('❌ Erro ao gerar treino personalizado, usando fallback:', error);
+      
+      // Fallback com lógica simplificada
+      return gerarTreinoFallback(anamnese);
+    }
+  };
+
+  const gerarTreinoFallback = (anamnese) => {
+    const hoje = new Date().getDay();
     
-    // Determinar se é dia de treino ou descanso
-    if (hoje === 0) { // Domingo = descanso
+    // Domingo = descanso
+    if (hoje === 0) {
       return {
         tipo: 'descanso',
         titulo: 'Dia de Descanso',
@@ -94,17 +152,19 @@ const TreinoDoDia = () => {
       };
     }
     
-    // Determinar nível de treino
+    // Determinar nível baseado na experiência
     let nivel = 'iniciante';
-    if (experiencia_treino === 'Menos de 1 ano' || experiencia_treino === '1-2 anos') {
+    if (anamnese.experiencia_treino?.includes('6 meses a 2 anos') || 
+        anamnese.experiencia_treino?.includes('2 a 5 anos')) {
       nivel = 'intermediario';
-    } else if (experiencia_treino === 'Mais de 2 anos') {
+    } else if (anamnese.experiencia_treino?.includes('Mais de 5 anos') ||
+               anamnese.experiencia_treino?.includes('Atleta')) {
       nivel = 'avancado';
     }
     
-    // Determinar tipo de treino baseado no dia
+    // Determinar tipo de treino baseado no dia (ABC)
     const tiposTreino = ['A', 'B', 'C'];
-    const tipoTreino = tiposTreino[(hoje - 1) % 3]; // Segunda=A, Terça=B, Quarta=C, etc.
+    const tipoTreino = tiposTreino[(hoje - 1) % 3];
     
     // Exercícios por tipo de treino
     const exerciciosPorTipo = {
@@ -113,27 +173,30 @@ const TreinoDoDia = () => {
         grupos: ['Peito', 'Tríceps'],
         exercicios: [
           {
-            nome: 'Supino reto com barra',
-            grupoMuscular: 'Peito',
-            series: nivel === 'iniciante' ? 3 : nivel === 'intermediario' ? 4 : 5,
-            repeticoes: nivel === 'iniciante' ? '10-12' : nivel === 'intermediario' ? '8-12' : '6-10',
-            descanso: '90s',
-            instrucoes: 'Mantenha os pés firmes no chão e controle o movimento'
-          },
-          {
-            nome: 'Supino inclinado com halteres',
+            nome: anamnese.local_treino?.includes('Casa') ? 'Flexão de braço' : 'Supino reto',
             grupoMuscular: 'Peito',
             series: nivel === 'iniciante' ? 3 : 4,
+            repeticoes: nivel === 'iniciante' ? '10-12' : '8-12',
+            descanso: '90s',
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '60kg',
+            instrucoes: 'Mantenha controle total do movimento'
+          },
+          {
+            nome: anamnese.local_treino?.includes('Casa') ? 'Flexão inclinada' : 'Supino inclinado',
+            grupoMuscular: 'Peito',
+            series: 3,
             repeticoes: '10-12',
             descanso: '90s',
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '50kg',
             instrucoes: 'Foque na contração do peito superior'
           },
           {
-            nome: 'Tríceps testa com barra',
+            nome: anamnese.local_treino?.includes('Casa') ? 'Tríceps no banco' : 'Tríceps testa',
             grupoMuscular: 'Tríceps',
             series: 3,
             repeticoes: '12-15',
             descanso: '60s',
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '30kg',
             instrucoes: 'Mantenha os cotovelos fixos'
           }
         ]
@@ -143,127 +206,124 @@ const TreinoDoDia = () => {
         grupos: ['Costas', 'Bíceps'],
         exercicios: [
           {
-            nome: 'Puxada frontal',
+            nome: anamnese.local_treino?.includes('Casa') ? 'Remada com garrafa' : 'Puxada frontal',
             grupoMuscular: 'Costas',
             series: nivel === 'iniciante' ? 3 : 4,
             repeticoes: '10-12',
             descanso: '90s',
-            instrucoes: 'Puxe até o peito, contraindo as escápulas'
+            carga: anamnese.local_treino?.includes('Casa') ? '5L água' : '50kg',
+            instrucoes: 'Puxe com as costas, não com os braços'
           },
           {
-            nome: 'Remada curvada',
+            nome: anamnese.local_treino?.includes('Casa') ? 'Remada curvada' : 'Remada baixa',
             grupoMuscular: 'Costas',
             series: 3,
-            repeticoes: '8-10',
+            repeticoes: '10-12',
             descanso: '90s',
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '45kg',
             instrucoes: 'Mantenha as costas retas'
           },
           {
-            nome: 'Rosca direta com barra',
+            nome: anamnese.local_treino?.includes('Casa') ? 'Rosca com garrafa' : 'Rosca direta',
             grupoMuscular: 'Bíceps',
             series: 3,
             repeticoes: '12-15',
             descanso: '60s',
-            instrucoes: 'Controle o movimento na descida'
+            carga: anamnese.local_treino?.includes('Casa') ? '2L água' : '20kg',
+            instrucoes: 'Controle a descida do peso'
           }
         ]
       },
       'C': {
-        titulo: 'Treino C: Pernas & Ombros',
-        grupos: ['Pernas', 'Ombros'],
+        titulo: 'Treino C: Pernas & Glúteos',
+        grupos: ['Pernas', 'Glúteos'],
         exercicios: [
           {
-            nome: 'Agachamento livre',
+            nome: 'Agachamento',
             grupoMuscular: 'Pernas',
             series: nivel === 'iniciante' ? 3 : 4,
             repeticoes: '12-15',
-            descanso: '120s',
-            instrucoes: 'Desça até 90 graus, mantenha o core contraído'
+            descanso: '90s',
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '70kg',
+            instrucoes: 'Desça até 90 graus nos joelhos'
           },
           {
-            nome: 'Leg press',
+            nome: anamnese.local_treino?.includes('Casa') ? 'Afundo' : 'Leg press',
             grupoMuscular: 'Pernas',
             series: 3,
-            repeticoes: '15-20',
+            repeticoes: '12-15',
             descanso: '90s',
-            instrucoes: 'Amplitude completa do movimento'
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '100kg',
+            instrucoes: 'Mantenha o tronco ereto'
           },
           {
-            nome: 'Desenvolvimento com halteres',
-            grupoMuscular: 'Ombros',
+            nome: anamnese.local_treino?.includes('Casa') ? 'Elevação pélvica' : 'Stiff',
+            grupoMuscular: 'Glúteos',
             series: 3,
-            repeticoes: '10-12',
-            descanso: '90s',
-            instrucoes: 'Não eleve os ombros durante o movimento'
+            repeticoes: '15-20',
+            descanso: '60s',
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '40kg',
+            instrucoes: 'Contraia bem os glúteos no topo'
           }
         ]
       }
     };
     
-    const treinoEscolhido = exerciciosPorTipo[tipoTreino];
+    const treinoSelecionado = exerciciosPorTipo[tipoTreino];
     
     return {
-      tipo: tipoTreino,
-      titulo: treinoEscolhido.titulo,
-      gruposMusculares: treinoEscolhido.grupos,
-      exercicios: treinoEscolhido.exercicios,
-      nivel: nivel,
-      duracao: '45-60 min',
+      tipo: 'treino',
+      titulo: treinoSelecionado.titulo,
+      grupos: treinoSelecionado.grupos,
+      duracao: 60,
+      exercicios: treinoSelecionado.exercicios,
       observacoes: [
-        'Faça aquecimento antes de iniciar',
-        'Mantenha boa forma em todos os exercícios',
-        'Hidrate-se durante o treino',
-        nivel === 'iniciante' ? 'Foque na técnica antes do peso' : 'Mantenha intensidade alta'
+        `🎯 Treino adaptado para ${anamnese.objetivo_principal || 'objetivos gerais'}`,
+        `🏠 Exercícios adequados para ${anamnese.local_treino || 'seu local de treino'}`,
+        `💪 Nível ${nivel} baseado na sua experiência`,
+        '💧 Mantenha-se hidratado durante o treino'
       ]
-    };
   };
 
   const getExampleTreino = () => {
     return {
-      tipo: 'A',
-      titulo: 'Treino A: Peito & Tríceps',
-      gruposMusculares: ['Peito', 'Tríceps'],
+      tipo: 'treino',
+      titulo: 'Treino Exemplo: Peito & Tríceps',
+      grupos: ['Peito', 'Tríceps'],
+      duracao: 60,
       exercicios: [
         {
-          nome: 'Supino reto com barra',
+          nome: 'Supino reto',
           grupoMuscular: 'Peito',
           series: 4,
           repeticoes: '8-12',
           descanso: '90s',
+          carga: '60kg',
           instrucoes: 'Mantenha os pés firmes no chão e controle o movimento'
         },
         {
-          nome: 'Supino inclinado com halteres',
+          nome: 'Supino inclinado',
           grupoMuscular: 'Peito',
           series: 3,
           repeticoes: '10-12',
           descanso: '90s',
+          carga: '50kg',
           instrucoes: 'Foque na contração do peito superior'
         },
         {
-          nome: 'Crucifixo com halteres',
-          grupoMuscular: 'Peito',
+          nome: 'Tríceps testa',
+          grupoMuscular: 'Tríceps',
           series: 3,
           repeticoes: '12-15',
           descanso: '60s',
-          instrucoes: 'Movimento amplo, sinta o alongamento do peito'
-        },
-        {
-          nome: 'Tríceps testa com barra',
-          grupoMuscular: 'Tríceps',
-          series: 3,
-          repeticoes: '10-12',
-          descanso: '60s',
+          carga: '30kg',
           instrucoes: 'Mantenha os cotovelos fixos'
-        },
-        {
-          nome: 'Tríceps corda na polia',
-          grupoMuscular: 'Tríceps',
-          series: 3,
-          repeticoes: '12-15',
-          descanso: '60s',
-          instrucoes: 'Abra a corda no final do movimento'
         }
+      ],
+      observacoes: [
+        '🔰 Treino exemplo para demonstração',
+        '💪 Foque na execução correta',
+        '💧 Mantenha-se hidratado'
       ]
     };
   };
