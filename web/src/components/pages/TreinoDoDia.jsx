@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/config/firebase';
 import { doc, getDoc, collection, addDoc } from 'firebase/firestore';
+import { gerarTreinoPersonalizado } from '@/utils/treinoPersonalizadoNovo';
 import { 
   PlayCircle, 
   Clock, 
@@ -65,10 +66,12 @@ const TreinoDoDia = () => {
       }
 
       const anamnese = anamneseDoc.data();
-      console.log('📋 Anamnese carregada:', anamnese);
+      console.log('📋 Anamnese carregada para treino:', anamnese);
 
-      // Gerar treino baseado na anamnese
-      const treinoGerado = gerarTreinoFallback(anamnese);
+      // Gerar treino personalizado com nova base de exercícios
+      const treinoGerado = gerarTreinoPersonalizado(anamnese);
+      console.log('🏋️ Treino gerado:', treinoGerado);
+      
       setTreino(treinoGerado);
       
     } catch (error) {
