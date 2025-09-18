@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/config/firebase';
 import { doc, getDoc, collection, addDoc } from 'firebase/firestore';
+import { gerarTreinoPersonalizado } from '@/utils/treinoPersonalizado';
 import { 
   PlayCircle, 
   Clock, 
@@ -57,195 +58,232 @@ const TreinoDoDia = () => {
       // Buscar anamnese do usuário
       const anamneseDoc = await getDoc(doc(db, 'anamneses', user.uid));
       
-      if (!anamneseDoc.exists()) {
+      if (anamneseDoc.exists()) {
+        const anamneseData = anamneseDoc.data();
+        console.log('🏋️ Gerando treino baseado na anamnese:', anamneseData);
+        
+        // Gerar treino personalizado baseado na anamnese
+        const treinoPersonalizado = gerarTreinoPersonalizado(anamneseData);
+        setTreino(treinoPersonalizado);
+      } else {
         console.log('Anamnese não encontrada, usando treino exemplo');
         setTreino(getExampleTreino());
-        setLoading(false);
-        return;
       }
-
-      const anamnese = anamneseDoc.data();
-      console.log('📋 Anamnese carregada:', anamnese);
-
-      // Gerar treino baseado na anamnese
-      const treinoGerado = gerarTreinoFallback(anamnese);
-      setTreino(treinoGerado);
-      
     } catch (error) {
-      console.error('Erro ao carregar treino:', error);
+      console.error('Erro ao carregar treino do dia:', error);
       setTreino(getExampleTreino());
     } finally {
       setLoading(false);
     }
   };
 
+  const gerarTreinoPersonalizado = (anamnese) => {
+    try {
+      // Importar e aplicar lógica de treinos personalizados
+      const { gerarTreinoPersonalizado: gerarTreino } = require('/functions/algorithms/treinoPersonalizado.js');
+      const programaSemanal = gerarTreino(anamnese);
+      
+      // Obter treino do dia atual
+      const hoje = new Date().getDay();
+      const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+      const diaAtual = diasSemana[hoje];
+      
+      const treinoDoDia = programaSemanal.treinos[diaAtual];
+      
+      console.log('✅ Treino do dia gerado:', treinoDoDia);
+      
+      // Adaptar formato para o componente
+      if (treinoDoDia.tipo === 'descanso') {
+        return {
+          tipo: 'descanso',
+          titulo: treinoDoDia.titulo,
+          descricao: treinoDoDia.descricao || 'Dia dedicado ao descanso e recuperação muscular',
+          atividades: treinoDoDia.atividades || [
+            'Caminhada leve (20-30 min)',
+            'Alongamento (10-15 min)',
+            'Hidratação adequada',
+            'Sono reparador (7-9 horas)'
+          ],
+          observacoes: treinoDoDia.observacoes || []
+        };
+      } else {
+        return {
+          tipo: 'treino',
+          titulo: treinoDoDia.titulo,
+          grupos: treinoDoDia.gruposMusculares,
+          duracao: treinoDoDia.duracao || 60,
+          exercicios: treinoDoDia.exercicios.map(ex => ({
+            nome: ex.nome,
+            grupoMuscular: ex.grupo,
+            series: ex.series,
+            repeticoes: ex.repeticoes,
+            descanso: ex.descanso,
+            carga: ex.carga,
+            instrucoes: ex.instrucoes,
+            equipamento: ex.equipamento,
+            dificuldade: ex.dificuldade
+          })),
+          observacoes: treinoDoDia.observacoes || [],
+          informacoes: programaSemanal.informacoes
+        };
+      }
+    } catch (error) {
+      console.error('❌ Erro ao gerar treino personalizado, usando fallback:', error);
+      
+      // Fallback com lógica simplificada
+      return gerarTreinoFallback(anamnese);
+    }
+  };
+
   const gerarTreinoFallback = (anamnese) => {
-    const hoje = new Date();
-    const diaSemana = hoje.getDay(); // 0 = domingo, 1 = segunda, etc.
+    const hoje = new Date().getDay();
     
-    // Verificar se é domingo (dia de descanso)
-    if (diaSemana === 0) {
+    // Domingo = descanso
+    if (hoje === 0) {
       return {
         tipo: 'descanso',
         titulo: 'Dia de Descanso',
-        observacoes: ['Aproveite para relaxar e se recuperar!']
+        descricao: 'Hoje é seu dia de recuperação. Aproveite para relaxar e se preparar para os próximos treinos.',
+        atividades: [
+          'Caminhada leve (opcional)',
+          'Alongamento',
+          'Hidratação adequada',
+          'Sono reparador'
+        ]
       };
     }
-
+    
+    // Determinar nível baseado na experiência
+    let nivel = 'iniciante';
+    if (anamnese.experiencia_treino?.includes('6 meses a 2 anos') || 
+        anamnese.experiencia_treino?.includes('2 a 5 anos')) {
+      nivel = 'intermediario';
+    } else if (anamnese.experiencia_treino?.includes('Mais de 5 anos') ||
+               anamnese.experiencia_treino?.includes('Atleta')) {
+      nivel = 'avancado';
+    }
+    
     // Determinar tipo de treino baseado no dia (ABC)
-    const tipoTreino = ['A', 'B', 'C'][diaSemana % 3];
-    const experiencia = anamnese.experiencia_treino || 'iniciante';
-    const local = anamnese.local_treino || 'casa';
-    const objetivo = anamnese.objetivo_principal || 'emagrecer';
-
-    // Exercícios por tipo de treino e local
+    const tiposTreino = ['A', 'B', 'C'];
+    const tipoTreino = tiposTreino[(hoje - 1) % 3];
+    
+    // Exercícios por tipo de treino
     const exerciciosPorTipo = {
-      'A': { // Peito e Tríceps
+      'A': {
         titulo: 'Treino A: Peito & Tríceps',
         grupos: ['Peito', 'Tríceps'],
-        exercicios: local === 'casa' ? [
+        exercicios: [
           {
-            nome: 'Flexão de braço',
+            nome: anamnese.local_treino?.includes('Casa') ? 'Flexão de braço' : 'Supino reto',
             grupoMuscular: 'Peito',
-            series: experiencia === 'iniciante' ? 3 : 4,
-            repeticoes: '10-15',
-            descanso: '60s',
-            carga: 'Peso corporal',
-            instrucoes: 'Mantenha o corpo alinhado e controle o movimento'
-          },
-          {
-            nome: 'Flexão diamante',
-            grupoMuscular: 'Tríceps',
-            series: experiencia === 'iniciante' ? 2 : 3,
-            repeticoes: '8-12',
-            descanso: '60s',
-            carga: 'Peso corporal',
-            instrucoes: 'Forme um diamante com as mãos'
-          }
-        ] : [
-          {
-            nome: 'Supino reto',
-            grupoMuscular: 'Peito',
-            series: experiencia === 'iniciante' ? 3 : 4,
-            repeticoes: '8-12',
+            series: nivel === 'iniciante' ? 3 : 4,
+            repeticoes: nivel === 'iniciante' ? '10-12' : '8-12',
             descanso: '90s',
-            carga: '60kg',
-            instrucoes: 'Mantenha os pés firmes no chão'
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '60kg',
+            instrucoes: 'Mantenha controle total do movimento'
           },
           {
-            nome: 'Tríceps testa',
-            grupoMuscular: 'Tríceps',
+            nome: anamnese.local_treino?.includes('Casa') ? 'Flexão inclinada' : 'Supino inclinado',
+            grupoMuscular: 'Peito',
             series: 3,
             repeticoes: '10-12',
+            descanso: '90s',
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '50kg',
+            instrucoes: 'Foque na contração do peito superior'
+          },
+          {
+            nome: anamnese.local_treino?.includes('Casa') ? 'Tríceps no banco' : 'Tríceps testa',
+            grupoMuscular: 'Tríceps',
+            series: 3,
+            repeticoes: '12-15',
             descanso: '60s',
-            carga: '30kg',
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '30kg',
             instrucoes: 'Mantenha os cotovelos fixos'
           }
         ]
       },
-      'B': { // Costas e Bíceps
+      'B': {
         titulo: 'Treino B: Costas & Bíceps',
         grupos: ['Costas', 'Bíceps'],
-        exercicios: local === 'casa' ? [
+        exercicios: [
           {
-            nome: 'Remada com garrafa',
+            nome: anamnese.local_treino?.includes('Casa') ? 'Remada com garrafa' : 'Puxada frontal',
             grupoMuscular: 'Costas',
-            series: experiencia === 'iniciante' ? 3 : 4,
-            repeticoes: '12-15',
-            descanso: '60s',
-            carga: '5L cada mão',
-            instrucoes: 'Puxe o cotovelo para trás'
-          },
-          {
-            nome: 'Rosca com garrafa',
-            grupoMuscular: 'Bíceps',
-            series: 3,
-            repeticoes: '12-15',
-            descanso: '45s',
-            carga: '2L cada mão',
-            instrucoes: 'Controle o movimento'
-          }
-        ] : [
-          {
-            nome: 'Puxada frontal',
-            grupoMuscular: 'Costas',
-            series: experiencia === 'iniciante' ? 3 : 4,
-            repeticoes: '8-12',
+            series: nivel === 'iniciante' ? 3 : 4,
+            repeticoes: '10-12',
             descanso: '90s',
-            carga: '50kg',
-            instrucoes: 'Puxe até o peito'
+            carga: anamnese.local_treino?.includes('Casa') ? '5L água' : '50kg',
+            instrucoes: 'Puxe com as costas, não com os braços'
           },
           {
-            nome: 'Rosca direta',
-            grupoMuscular: 'Bíceps',
+            nome: anamnese.local_treino?.includes('Casa') ? 'Remada curvada' : 'Remada baixa',
+            grupoMuscular: 'Costas',
             series: 3,
             repeticoes: '10-12',
+            descanso: '90s',
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '45kg',
+            instrucoes: 'Mantenha as costas retas'
+          },
+          {
+            nome: anamnese.local_treino?.includes('Casa') ? 'Rosca com garrafa' : 'Rosca direta',
+            grupoMuscular: 'Bíceps',
+            series: 3,
+            repeticoes: '12-15',
             descanso: '60s',
-            carga: '20kg',
-            instrucoes: 'Não balance o corpo'
+            carga: anamnese.local_treino?.includes('Casa') ? '2L água' : '20kg',
+            instrucoes: 'Controle a descida do peso'
           }
         ]
       },
-      'C': { // Pernas e Ombros
-        titulo: 'Treino C: Pernas & Ombros',
-        grupos: ['Pernas', 'Ombros'],
-        exercicios: local === 'casa' ? [
+      'C': {
+        titulo: 'Treino C: Pernas & Glúteos',
+        grupos: ['Pernas', 'Glúteos'],
+        exercicios: [
           {
-            nome: 'Agachamento livre',
+            nome: 'Agachamento',
             grupoMuscular: 'Pernas',
-            series: experiencia === 'iniciante' ? 3 : 4,
+            series: nivel === 'iniciante' ? 3 : 4,
+            repeticoes: '12-15',
+            descanso: '90s',
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '70kg',
+            instrucoes: 'Desça até 90 graus nos joelhos'
+          },
+          {
+            nome: anamnese.local_treino?.includes('Casa') ? 'Afundo' : 'Leg press',
+            grupoMuscular: 'Pernas',
+            series: 3,
+            repeticoes: '12-15',
+            descanso: '90s',
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '100kg',
+            instrucoes: 'Mantenha o tronco ereto'
+          },
+          {
+            nome: anamnese.local_treino?.includes('Casa') ? 'Elevação pélvica' : 'Stiff',
+            grupoMuscular: 'Glúteos',
+            series: 3,
             repeticoes: '15-20',
-            descanso: '90s',
-            carga: 'Peso corporal',
-            instrucoes: 'Desça até 90 graus'
-          },
-          {
-            nome: 'Elevação lateral com garrafa',
-            grupoMuscular: 'Ombros',
-            series: 3,
-            repeticoes: '12-15',
-            descanso: '45s',
-            carga: '1L cada mão',
-            instrucoes: 'Eleve até a altura dos ombros'
-          }
-        ] : [
-          {
-            nome: 'Leg press',
-            grupoMuscular: 'Pernas',
-            series: experiencia === 'iniciante' ? 3 : 4,
-            repeticoes: '12-15',
-            descanso: '90s',
-            carga: '100kg',
-            instrucoes: 'Amplitude completa'
-          },
-          {
-            nome: 'Desenvolvimento com halteres',
-            grupoMuscular: 'Ombros',
-            series: 3,
-            repeticoes: '10-12',
             descanso: '60s',
-            carga: '15kg cada',
-            instrucoes: 'Não eleve os ombros'
+            carga: anamnese.local_treino?.includes('Casa') ? 'Peso corporal' : '40kg',
+            instrucoes: 'Contraia bem os glúteos no topo'
           }
         ]
       }
     };
-
-    const treinoEscolhido = exerciciosPorTipo[tipoTreino];
+    
+    const treinoSelecionado = exerciciosPorTipo[tipoTreino];
     
     return {
-      tipo: tipoTreino,
-      titulo: treinoEscolhido.titulo,
-      grupos: treinoEscolhido.grupos,
-      duracao: 45,
-      exercicios: treinoEscolhido.exercicios,
+      tipo: 'treino',
+      titulo: treinoSelecionado.titulo,
+      grupos: treinoSelecionado.grupos,
+      duracao: 60,
+      exercicios: treinoSelecionado.exercicios,
       observacoes: [
-        `🎯 Treino adaptado para ${objetivo}`,
-        `🏠 Exercícios adequados para ${local}`,
-        `💪 Nível ${experiencia} baseado na sua experiência`,
+        `🎯 Treino adaptado para ${anamnese.objetivo_principal || 'objetivos gerais'}`,
+        `🏠 Exercícios adequados para ${anamnese.local_treino || 'seu local de treino'}`,
+        `💪 Nível ${nivel} baseado na sua experiência`,
         '💧 Mantenha-se hidratado durante o treino'
       ]
-    };
   };
 
   const getExampleTreino = () => {
@@ -291,12 +329,32 @@ const TreinoDoDia = () => {
     };
   };
 
-  const iniciarTreino = () => {
-    setSessaoAtiva({
-      id: Date.now(),
-      inicio: new Date(),
-      treinoId: treino.tipo
-    });
+  const iniciarTreino = async () => {
+    try {
+      const response = await fetch('https://us-central1-evolveyou-prod.cloudfunctions.net/iniciarTreino', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          treinoId: treino.tipo,
+          dataPlano: new Date().toISOString().split('T')[0]
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setSessaoAtiva(data.sessao);
+        setExercicioAtual(0);
+        setSerieAtual(1);
+      } else {
+        console.error('Erro ao iniciar treino:', data.error);
+      }
+    } catch (error) {
+      console.error('Erro ao iniciar treino:', error);
+    }
   };
 
   const proximaSerie = () => {
@@ -334,6 +392,7 @@ const TreinoDoDia = () => {
     setSessaoAtiva(null);
     setExercicioAtual(0);
     setSerieAtual(1);
+    // Aqui poderia salvar estatísticas do treino
   };
 
   const formatarTempo = (segundos) => {
@@ -383,28 +442,29 @@ const TreinoDoDia = () => {
           </div>
         </main>
 
+        {/* Navegação */}
         <nav className="fixed bottom-0 left-0 right-0 max-w-md lg:max-w-4xl mx-auto bg-gray-800 border-t border-gray-700">
           <div className="flex justify-around">
-            <Link to="/dashboard" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
+            <a href="/dashboard" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
               <Home className="w-6 h-6" />
               <span className="text-xs">Hoje</span>
-            </Link>
-            <Link to="/dieta" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
+            </a>
+            <a href="/dieta" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
               <Utensils className="w-6 h-6" />
               <span className="text-xs">Dieta</span>
-            </Link>
-            <Link to="/treino" className="flex flex-col items-center justify-center p-3 text-green-400 w-1/5">
+            </a>
+            <a href="/treino" className="flex flex-col items-center justify-center p-3 text-green-400 w-1/5">
               <Dumbbell className="w-6 h-6" />
               <span className="text-xs">Treino</span>
-            </Link>
-            <Link to="/plano" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
+            </a>
+            <a href="/plano" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
               <Calendar className="w-6 h-6" />
               <span className="text-xs">Plano</span>
-            </Link>
-            <Link to="/progresso" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
+            </a>
+            <a href="/progresso" className="flex flex-col items-center justify-center p-3 text-gray-400 hover:text-green-400 w-1/5 transition-colors">
               <TrendingUp className="w-6 h-6" />
               <span className="text-xs">Progresso</span>
-            </Link>
+            </a>
           </div>
         </nav>
       </div>
@@ -437,16 +497,43 @@ const TreinoDoDia = () => {
               <button 
                 onClick={iniciarTreino}
                 className="w-full bg-gradient-to-r from-green-400 to-purple-500 hover:from-green-500 hover:to-purple-600 text-white font-bold py-4 px-4 rounded-xl text-lg flex items-center justify-center transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
+                style={{
+                  boxShadow: '0 0 20px rgba(139, 92, 246, 0.3), 0 0 10px rgba(52, 211, 153, 0.3)'
+                }}
               >
                 <PlayCircle className="w-6 h-6 mr-3" />
                 Iniciar Treino
               </button>
             </div>
 
+            {/* Resumo do Treino - Desktop */}
+            <div className="hidden lg:block">
+              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-6">
+                <div className="grid grid-cols-3 gap-6 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-purple-400">{treino?.exercicios?.length || 0}</p>
+                    <p className="text-sm text-gray-400">Exercícios</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-green-400">
+                      {treino?.exercicios?.reduce((total, ex) => total + ex.series, 0) || 0}
+                    </p>
+                    <p className="text-sm text-gray-400">Séries Totais</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-blue-400">
+                      {treino?.gruposMusculares?.join(', ') || 'N/A'}
+                    </p>
+                    <p className="text-sm text-gray-400">Grupos Musculares</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Lista de Exercícios */}
-            <div className="space-y-4">
+            <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0 space-y-4">
               {treino?.exercicios?.map((exercicio, index) => (
-                <div key={index} className="bg-gray-800 rounded-xl p-5 border border-gray-700">
+                <div key={index} className="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:border-gray-600 transition-colors">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-grow">
                       <h3 className="font-semibold text-lg text-white mb-1">{exercicio.nome}</h3>
