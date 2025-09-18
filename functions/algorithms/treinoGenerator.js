@@ -85,7 +85,7 @@ class TreinoGenerator {
         6: 'descanso'  // Sábado
       };
     } else if (this.divisaoTreino === 'abc') {
-      // ABC: Segunda(A), Terça(B), Quarta(C), Quinta(A), Sexta(B), Sábado(C)
+      // ABC: Segunda(A), Terça(B), Quarta(C), Quinta(A), Sexta(B), Sábado(C), Domingo(descanso)
       return {
         0: 'descanso', // Domingo
         1: 'A',        // Segunda
